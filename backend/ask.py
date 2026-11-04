@@ -7,7 +7,7 @@ Pipeline (each step can refuse):
   1. Guard the question (it is DATA, not instructions): refuse rule-changing / prompt-revealing / DDL-DML requests and
      questions about a named person's survey answers.
   2. Groq (JSON mode) writes {sql, chart_type, x, y, series, title, explanation} — or {"refuse": true, "reason"}.
-     The prompt holds the v_* schema with column comments, the metric definitions from the case brief and 6 few-shots.
+     The prompt holds the v_* schema with column comments, the metric definitions from docs/metric_definitions.md and 6 few-shots.
   3. sqlglot validation: one SELECT / WITH / UNION only; only v_* views; no DDL/DML/PRAGMA/ATTACH/COPY/INSTALL, no
      read_* / file / system functions; names never combined with survey views; survey queries must aggregate and carry
      a respondent-count column n. LIMIT 500 is added (or capped).
@@ -223,7 +223,7 @@ _HIRING_DEF = re.compile(r"ttf|time to fill|sla|critical|funnel|stage|offer|join
 
 
 def metric_definitions(views: list[str] | None = None) -> str:
-    """Metric definitions from the case brief (single source of truth), filtered to the topic of the question."""
+    """Metric definitions from docs/metric_definitions.md (single source of truth), filtered to the question's topic."""
     text = _metric_section()
     views = views or []
     want_s, want_h = bool(set(views) & set(SURVEY_SCHEMA_VIEWS)), bool(set(views) & set(HIRING_SCHEMA_VIEWS))
@@ -237,10 +237,10 @@ def metric_definitions(views: list[str] | None = None) -> str:
 @lru_cache(maxsize=1)
 def _metric_section() -> str:
     try:
-        text = (ROOT / "the case brief").read_text(encoding="utf-8")
-        m = re.search(r"## Metric definitions.*?\n(.*?)\n## ", text, re.S)
-        if m:
-            return m.group(1).strip()
+        text = (ROOT / "docs" / "metric_definitions.md").read_text(encoding="utf-8")
+        body = text.split("<!-- definitions -->", 1)[-1].strip()
+        if body:
+            return body
     except OSError:
         pass
     return ("eNPS = 100 * (share with Q1 9-10 minus share with Q1 0-6), one decimal. Response rate = valid respondents / "

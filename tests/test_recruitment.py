@@ -19,7 +19,7 @@ STAGE_PAIRS = [("applied_on", "shortlisted_on", "days_applied_to_shortlisted"),
                ("offer_response_on", "actual_doj", "days_response_to_join")]
 
 
-# ── the five checks named in the case brief ───────────────────────────────────────
+# ── the five checks named in the project plan ───────────────────────────────────────
 
 def test_unique_candidate_id(rec):
     assert rec["cand"]["candidate_id"].is_unique

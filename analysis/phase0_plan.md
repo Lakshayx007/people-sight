@@ -108,11 +108,11 @@ analysis/ ── check_metrics → metric_reference.md ── 05_insights → in
 
 ## 5. Where the case brief and the data disagree (or are silent)
 
-Checked against the raw files. Items marked **Decision needed** await the user's answer.
+Checked against the raw files. Items marked **Decision needed** await a decision.
 
 | # | Topic | What the data shows | Proposed resolution |
 |---|---|---|---|
-| 1 | Workbook names/location | Files were in the project root as `eNPS Data.xlsx` and `Case_Recruitment_Data.xlsx`. | Copied unchanged to `data/raw/` under the the case brief names. Originals left in place, git-ignored. **Resolved.** |
+| 1 | Workbook names/location | Files were in the project root as `eNPS Data.xlsx` and `Case_Recruitment_Data.xlsx`. | Copied unchanged to `data/raw/` under the names in the case brief. Originals left in place, git-ignored. **Resolved.** |
 | 2 | Employee ID fixes ("lowercase `emp` (26 rows)") | 26 IDs need fixing, but only 5 are lowercase; 21 just have stray spaces. | Same treatment (strip + upper); correct the wording in the case brief in Phase 1. **Resolved.** |
 | 3 | Status vs Date of Exit (spec says "cross-check", no treatment) | 4 rows `Active` but with an exit date (May–Sep 2026) and Exit Type + Classification filled (EMP15158, EMP28501, EMP25584, EMP16376; EMP25584 is also backfilled by a replacement req). 3 rows `Exited` with no exit date but Exit Type filled (EMP34460, EMP15885, EMP15975). | **Decision needed.** Proposed: (a) the 4 → Exited, keep their exit date (three fields agree vs one stale status); (b) the 3 → stay Exited, exit date unknown, so they count as active on both wave open dates and get no exit month. Log both. |
 | 4 | Candidate Status canonical list (not defined) | 22 raw values incl. `Applied - Under Review`, `Shortlisted`, `Screening Cleared`, `R1 Cleared`, `R1 Feedback Pending`, `Offer In Approval`, `On Hold - Position Filled`, `Withdrawn`, `Not Joined - Backed Out`. | **Decision needed.** Proposed 16: Applied - Under Review, Shortlisted, Screening Cleared, R1 Cleared, R1 Feedback Pending, Offer In Approval, Offer Accepted - Yet to Join, Joined, Offer Declined, Not Joined - Backed Out, Rejected - Profile, Rejected - Screening, Rejected - R1, Rejected - R2, On Hold - Position Filled, Withdrawn. Merge only the spelling variants (`Rejected-Profile`, `Profile Reject` → Rejected - Profile; `R1 Reject` → Rejected - R1; `joined`/`Joined ` → Joined; `Declined` → Offer Declined). |

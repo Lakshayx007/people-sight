@@ -11,7 +11,7 @@ volume measures (reqs raised, open, past SLA) from v_requisitions. Unfiltered th
 requisitions. Under a Source filter they mean: reqs raised / open = reqs with >= 1 applicant from the source;
 filled / TTF / SLA = reqs filled by a candidate from the source — so the funnel always reconciles with the KPIs.
 
-Definitions (the case brief): TTF = hired candidate's Offer Response On - Req Raised On (days).
+Definitions (docs/metric_definitions.md): TTF = hired candidate's Offer Response On - Req Raised On (days).
 SLA met = TTF <= SLA days (recomputed status is authoritative). Open reqs breached if age at 31-Oct > SLA.
 Offer acceptance = Accepted / (Accepted + Declined). Joining rate = Joined / Accepted with Expected DOJ <= 31-Oct.
 Agency fee = 8.33% x Offered CTC for agency-sourced candidates who joined.

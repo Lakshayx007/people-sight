@@ -31,6 +31,6 @@ Thumbs.db
 .vscode/
 .idea/
 
-# local transfer bundles and scratch folders
+# local transfer bundles
 *.bundle
 .nm_trash/

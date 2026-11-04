@@ -7,7 +7,7 @@ Filters: `w` is a (fragment, params) pair applied to BOTH v_survey and v_invited
 segment column names), so numerators and response-rate denominators always describe the same group.
 Small-n suppression: any group with fewer than MIN_N respondents returns NULL scores and suppressed = true.
 
-Definitions (the case brief): eNPS = 100 * (share Q1 9-10 - share Q1 0-6), one decimal.
+Definitions (docs/metric_definitions.md): eNPS = 100 * (share Q1 9-10 - share Q1 0-6), one decimal.
 Response rate = valid respondents / employees active on the wave open date (same segment).
 Driver scores Q2-Q6: mean and % favourable (4-5).
 """

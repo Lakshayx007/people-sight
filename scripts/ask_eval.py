@@ -1,7 +1,7 @@
 """
 ask_eval.py — evaluate Ask the Data against the dashboard and write analysis/ask_the_data_tests.md.
 
-For each test question (6 from the case brief + the 6 suggestion chips): the SQL Groq produced, the result rows, the matching
+For each test question (6 required test questions + the 6 suggestion chips): the SQL Groq produced, the result rows, the matching
 dashboard numbers (computed by backend/metrics_*.py, the same functions the panels use) and MATCH / MISMATCH.
 Then the refusal tests (DDL/DML, named person's survey score, names joined with survey data, rule-override prompts).
 

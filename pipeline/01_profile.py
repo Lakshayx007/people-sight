@@ -242,7 +242,7 @@ new("Employee_Master", f"{len(a_ex)} employees are 'Active' but have an exit dat
 blr = em[em["Location"].str.strip() == "BLR"]
 new("Employee_Master", f"All {len(blr)} 'BLR' rows have Location Type = {fmt_list(blr['Location Type'].dropna().unique())}.", "Map BLR → Bengaluru (City), not HO.")
 lt_null_loc = em[em["Location Type"].isna()]["Location"].str.strip()
-new("Employee_Master", f"Location Type is null on {len(lt_null_loc)} rows; {int(lt_null_loc.isin(['Bengaluru HO', 'BLR - HO', 'Bangalore HO']).sum())} of them are at an HO spelling.", "Fill from cleaned Location per the case brief rule.")
+new("Employee_Master", f"Location Type is null on {len(lt_null_loc)} rows; {int(lt_null_loc.isin(['Bengaluru HO', 'BLR - HO', 'Bangalore HO']).sum())} of them are at an HO spelling.", "Fill from cleaned Location per the brief's rule.")
 pnull = em["Performance Rating FY25-26"].isna()
 new("Employee_Master", f"All {int(pnull.sum())} null performance ratings belong to joiners on/after 01-Jan-2026 ({int((pnull & (em['_doj'] >= '2026-01-01')).sum())}); none are otherwise missing.", "All → 'Not Rated - New Joiner'; 'Missing' bucket will be empty.")
 gv = sorted(set(em["Grade"]) - {f"G{i}" for i in range(1, 11)} - {"TBA"})
@@ -251,11 +251,11 @@ mgr_missing = sorted(set(em["Reporting Manager ID"].map(norm_emp_id)) - master_i
 new("Employee_Master", f"{len(mgr_missing)} Reporting Manager IDs are not in Employee_Master (of {em['Reporting Manager ID'].nunique()} distinct).", "Informational: manager attributes unavailable for those; not used in metrics.")
 paired = rs[rs.duplicated(["_id", "_wave"], keep=False) & ~rs["_id"].isin(TEST_IDS)].sort_values("_sub")
 diff_pairs = int(paired.groupby(["_id", "_wave"])[QCOLS].nunique(dropna=False).gt(1).any(axis=1).sum())
-new("eNPS_Responses", f"Of the {int((pairs > 1).sum())} double-answered employee-wave pairs, {diff_pairs} have at least one different Q1–Q6 answer between the two submissions.", "Keep latest submission (the case brief rule); the choice matters only for these pairs.")
+new("eNPS_Responses", f"Of the {int((pairs > 1).sum())} double-answered employee-wave pairs, {diff_pairs} have at least one different Q1–Q6 answer between the two submissions.", "Keep latest submission (brief rule); the choice matters only for these pairs.")
 qnull = {c.split('.')[0]: int(rs[c].isna().sum()) for c in QCOLS}
 new("eNPS_Responses", f"Blank answers per question: {qnull}.", "Q1 blank → not valid for eNPS; Q2–Q6 blank → excluded from that driver's mean only.")
 new("eNPS_Responses", f"{rs['Comments (optional)'].nunique()} distinct comment phrases (the case brief says ~20).", "All 22 get a theme in Phase 2.")
-new("Requisitions", f"Thread spelling `central` (lowercase) is not in the the case brief variant list.", "Same normalisation.")
+new("Requisitions", f"Thread spelling `central` (lowercase) is not in the case brief's variant list.", "Same normalisation.")
 rep_ids = rq["Replaced Employee ID"].dropna().map(norm_emp_id)
 new("Requisitions", f"{int((~rep_ids.isin(master_ids)).sum())} of {len(rep_ids)} Replaced Employee IDs are not in Employee_Master.", "Expected per data dictionary (left before 01-Apr-2026): exit fields and days_exit_to_req stay null.")
 new("Requisitions", f"SLA Status (System) is blank on {int(rq['SLA Status (System)'].isna().sum())} reqs (by Req Status: {counts(rq.loc[rq['SLA Status (System)'].isna(), 'Req Status'])}).", "Recomputed SLA status covers them; count as 'system blank' in the mismatch table.")
@@ -266,7 +266,7 @@ cs = cdk["_status"]
 new("Candidates", f"Kept candidates: {int(cs.str.lower().eq('joined').sum())} status Joined, {int(cdk['Actual DOJ'].notna().sum())} with Actual DOJ, {int(rq['Req Status'].str.strip().str.lower().isin(['closed - joined', 'closed-joined', 'joined']).sum())} reqs Closed - Joined.", "Counts reconcile once orphans are excluded.")
 extra_status = sorted(set(cdd["Candidate Status"].str.strip()) - CANDIDATE_STATUS_CANON)
 new("Candidates", f"Candidate Status values outside the 16 agreed canonical values (spelling variants only): {fmt_list(extra_status)}.", "Map to canonical list; no new categories.")
-new("Candidates", f"Notice Period strings beyond the case brief examples: {fmt_list(sorted(set(np_str) - {'2 months', '1 month', '30 days', 'Immediate'}))}.", "Same rule (month = 30 days, Immediate = 0).")
+new("Candidates", f"Notice Period strings beyond the case brief's examples: {fmt_list(sorted(set(np_str) - {'2 months', '1 month', '30 days', 'Immediate'}))}.", "Same rule (month = 30 days, Immediate = 0).")
 new("Candidates", f"Offer Status values: {counts(cdd['Offer Status'].dropna())} — no 'Pending' despite the data dictionary.", "Nothing to do.")
 pairs_stage = [("Applied On", "Shortlisted On"), ("Shortlisted On", "Screening Done On"), ("Screening Done On", "R1 Interview Date"),
                ("R1 Interview Date", "R2 Interview Date"), ("R2 Interview Date", "Offer Released On"),

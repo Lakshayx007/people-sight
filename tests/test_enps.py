@@ -19,7 +19,7 @@ def valid(enps):
     return enps["resp"][enps["resp"]["is_valid"]]
 
 
-# ── the five checks named in the case brief ───────────────────────────────────────
+# ── the five checks named in the project plan ───────────────────────────────────────
 
 def test_unique_employee_ids(enps):
     ids = enps["emp"]["employee_id"]

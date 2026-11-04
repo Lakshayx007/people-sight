@@ -1,6 +1,6 @@
 # Hypotheses (Phase 9)
 
-Written from the case brief before testing; `pipeline/05_insights.py` tests each one and writes `analysis/insights.md`. Tests: eNPS z-test on the +1/0/−1 score, two-proportion z / Fisher exact, Mann-Whitney U, Wilcoxon signed-rank (panel), within-strata permutation, Spearman.
+Written from the project plan before testing; `pipeline/05_insights.py` tests each one and writes `analysis/insights.md`. Tests: eNPS z-test on the +1/0/−1 score, two-proportion z / Fisher exact, Mann-Whitney U, Wilcoxon signed-rank (panel), within-strata permutation, Spearman.
 
 | ID | Hypothesis | Data | Test |
 |---|---|---|---|

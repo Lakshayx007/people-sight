@@ -1,7 +1,7 @@
 """
 05_insights.py
 --------------
-Tests every Phase 9 hypothesis in the case brief against data/people.duckdb (read-only, v_* views only) and writes:
+Tests every Phase 9 hypothesis in the project plan against data/people.duckdb (read-only, v_* views only) and writes:
   analysis/hypotheses.md   the hypotheses and the test planned for each
   analysis/insights.md     ranked findings, counterfactuals, recommendations, one section per hypothesis
   analysis/charts/F*.png   one deck-ready chart (16:9) for each of the top-8 findings
@@ -1323,7 +1323,7 @@ def main() -> None:
     write_dq_note()
 
     hyp = ["# Hypotheses (Phase 9)", "",
-           "Written from the case brief before testing; `pipeline/05_insights.py` tests each one and writes "
+           "Written from the project plan before testing; `pipeline/05_insights.py` tests each one and writes "
            "`analysis/insights.md`. Tests: eNPS z-test on the +1/0/−1 score, two-proportion z / Fisher exact, "
            "Mann-Whitney U, Wilcoxon signed-rank (panel), within-strata permutation, Spearman.", "",
            "| ID | Hypothesis | Data | Test |", "|---|---|---|---|"]

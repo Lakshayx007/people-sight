@@ -248,7 +248,7 @@ dq.log(EM, "Date of Exit", f"Exited with missing exit date: {int(unk.sum())} row
        f"({int(e.loc[unk, 'active_on_apr_open'].sum())} of {int(unk.sum())}); tenure_days blank; April responses count as 'exited after wave'",
        "Status Exited is authoritative; EMP15885 has a replacement req raised 04-Jul-2026, so they had left before October")
 in_win = e["manager_effective_from"].between(*MGR_WINDOW)
-e["manager_changed_literal"] = in_win          # backup only: literal the case brief rule, not used in charts
+e["manager_changed_literal"] = in_win          # backup only: literal brief rule, not used in charts
 changed_mgr = in_win & (e["manager_effective_from"] > e["date_of_joining"])
 first_mgr = in_win & (e["manager_effective_from"] == e["date_of_joining"])
 e["manager_status"] = np.select([changed_mgr, first_mgr], [MGR_CHANGED, MGR_FIRST], default=MGR_SAME)
@@ -261,7 +261,7 @@ dq.log(EM, "Manager Effective From", f"manager_status: '{MGR_FIRST}' (effective 
        int(first_mgr.sum()), "manager_status = New joiner (first manager)", MGR_ASSUMPTION)
 dq.log(EM, "Manager Effective From", f"manager_status: '{MGR_SAME}' (everyone else)",
        int((e["manager_status"] == MGR_SAME).sum()), "manager_status = Same manager", MGR_ASSUMPTION)
-dq.log(EM, "Manager Effective From", "Literal the case brief rule (effective 18-Apr..04-Oct-2026), any joining date",
+dq.log(EM, "Manager Effective From", "Literal brief rule (effective 18-Apr..04-Oct-2026), any joining date",
        int(in_win.sum()), "Kept as manager_changed_literal (backup only, not used in charts)", MGR_ASSUMPTION)
 other_in_win = int((in_win & (e["manager_effective_from"] < e["date_of_joining"])).sum())
 dq.log(EM, "Manager Effective From", "In window but before Date of Joining", other_in_win, "Validated" if other_in_win == 0 else "Flagged")
