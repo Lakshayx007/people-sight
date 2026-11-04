@@ -122,8 +122,10 @@ ORDER BY applicants DESC"""
 
 
 def recruiters(wr: Where = ALL, wc: Where = ALL, months: int = len(FY_MONTHS)):
-    """Recruiter load vs target: reqs owned (share), open, filled, median TTF, SLA met %, accepted offers per month
-    over the FY-to-date months (Apr-Oct = 7), target and attainment."""
+    """Recruiter load vs target: reqs owned (share), open, filled, median TTF, SLA met %, and attainment in two
+    versions over the FY-to-date months (Apr-Oct = 7):
+      *_all        = all accepted offers (incl. candidates who later backed out)
+      *_excl_bo    = accepted offers excluding backed-out candidates."""
     ctes, p = _ctes(wr, wc)
     sql = f"""
 WITH {ctes},
@@ -132,15 +134,20 @@ WITH {ctes},
                    count(*) FILTER (WHERE is_filled) AS filled, median(ttf_days) FILTER (WHERE is_filled) AS median_ttf_days,
                    round(100.0 * avg(sla_met::INT) FILTER (WHERE is_filled), 1) AS pct_within_sla
             FROM r GROUP BY recruiter),
-     ac AS (SELECT recruiter, count(*) FILTER (WHERE is_offer_accepted) AS offers_accepted FROM c GROUP BY recruiter)
+     ac AS (SELECT recruiter, count(*) FILTER (WHERE is_offer_accepted) AS acc_all,
+                   count(*) FILTER (WHERE is_offer_accepted AND NOT is_backed_out) AS acc_excl_bo
+            FROM c GROUP BY recruiter)
 SELECT t.recruiter, t.recruiter_id, coalesce(rq.reqs, 0) AS reqs,
        round(100.0 * coalesce(rq.reqs, 0) / nullif(sum(rq.reqs) OVER (), 0), 1) AS pct_of_reqs,
        coalesce(rq.open_reqs, 0) AS open_reqs, coalesce(rq.open_past_sla, 0) AS open_past_sla,
        coalesce(rq.filled, 0) AS filled, rq.median_ttf_days, rq.pct_within_sla,
-       coalesce(ac.offers_accepted, 0) AS offers_accepted,
-       round(coalesce(ac.offers_accepted, 0) / $months, 2) AS accepted_per_month,
        t.monthly_offer_target,
-       round(100.0 * coalesce(ac.offers_accepted, 0) / $months / t.monthly_offer_target, 1) AS attainment_pct
+       coalesce(ac.acc_all, 0) AS offers_accepted_all,
+       round(coalesce(ac.acc_all, 0) / $months, 2) AS accepted_per_month_all,
+       round(100.0 * coalesce(ac.acc_all, 0) / $months / t.monthly_offer_target, 1) AS attainment_all_pct,
+       coalesce(ac.acc_excl_bo, 0) AS offers_accepted_excl_bo,
+       round(coalesce(ac.acc_excl_bo, 0) / $months, 2) AS accepted_per_month_excl_bo,
+       round(100.0 * coalesce(ac.acc_excl_bo, 0) / $months / t.monthly_offer_target, 1) AS attainment_excl_bo_pct
 FROM v_recruiters t LEFT JOIN rq USING (recruiter) LEFT JOIN ac USING (recruiter)
 ORDER BY reqs DESC"""
     return sql, merge(p, {"months": months})

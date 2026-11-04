@@ -14,7 +14,18 @@ Survey groups with fewer than 5 respondents show — (suppressed). Percentages a
 - Median TTF **25 days** (n = 231 filled); within SLA **75.8%**; open past SLA 37 of 61
 - Offer acceptance **82.8%** (245 / 296); joining rate **92.3%** (167 / 181 due by 31-Oct)
 - Agency fees **₹8.07 lakh** (₹807,093) on 18 agency joiners
-- Rhea Kapoor owns 106 of 300 reqs (35.3%); attainment 91.8% of target
+- Rhea Kapoor owns 106 of 300 reqs (35.3%); attainment 91.8% (all accepted offers, 90) / 87.8% (excluding backed-out, 86) of a 14/month target
+
+## Early signals (with n; significance tested in Phase 9)
+
+- Manager status, October eNPS: Changed manager **-59.1** (n = 44) vs Same manager +13.0 (n = 629); New joiner (first manager) -23.8 (n = 126). Changed-manager cohort in April: +4.2 (n = 48)
+- Weakest threads: Intercity +0.0 (n = 170) → -19.4 (n = 186); Central +15.8 (n = 120) → +0.8 (n = 118)
+- Response rate collapse with rising eNPS: Enterprise 82.7% (n = 91 of 110) → 24.1% (n = 26 of 108); Packers & Movers 80.1% (n = 137 of 171) → 45.9% (n = 84 of 183)
+- Non-response bias: April eNPS of October non-respondents +15.9 (n = 227) vs October respondents +20.2 (n = 526), gap -4.3 pts. Packers & Movers +19.4 (n = 72) vs +44.9 (n = 49); Enterprise +30.0 (n = 60) vs +41.2 (n = 17)
+- April respondents who later exited: detractors **31.8%** (78 of n = 245), passives 12.1% (34 of n = 281), promoters 5.6% (19 of n = 340)
+- TTF vs SLA by grade: G6 median 83 d vs 60-day SLA, 38.5% within (n = 13 filled); G7 70.5 d, 37.5% within (n = 8); G3 38 d vs 45, 58.5% within (n = 65)
+- Slow R1 feedback: Deepak Malhotra median 12 d (n = 13 interviews); Pranav Verma median 10 d (n = 11 interviews); the other 13 ranked interviewers have medians ≤ 2 d
+- Offers below 0.90× expected CTC: **42.7%** declined (32 of n = 75) vs 7.7% at 0.90–0.99 (11 of n = 142) and 10.1% at 1.00–1.09 (8 of n = 79)
 
 ## Employee Sentiment (eNPS)
 
@@ -30,10 +41,10 @@ Survey groups with fewer than 5 respondents show — (suppressed). Percentages a
 
 `metrics_enps.by_wave()`
 
-| wave | invited | n | response_rate_pct | pct_promoters | pct_passives | pct_detractors | enps | suppressed |
-|---|---|---|---|---|---|---|---|---|
-| Apr | 1079 | 866 | 80.3 | 39.3 | 32.4 | 28.3 | 11 | False |
-| Oct | 1135 | 799 | 70.4 | 36.4 | 30.4 | 33.2 | 3.3 | False |
+| wave | invited | n | response_rate_pct | pct_promoters | pct_passives | pct_detractors | enps | suppressed | low_response |
+|---|---|---|---|---|---|---|---|---|---|
+| Apr | 1079 | 866 | 80.3 | 39.3 | 32.4 | 28.3 | 11 | False | False |
+| Oct | 1135 | 799 | 70.4 | 36.4 | 30.4 | 33.2 | 3.3 | False | False |
 
 ### Panel — respondents valid in both waves
 
@@ -45,143 +56,170 @@ Survey groups with fewer than 5 respondents show — (suppressed). Percentages a
 
 ### Segment: Thread
 
-`metrics_enps.segment('thread')` — n<5 shows — (suppressed)
+`metrics_enps.segment('thread')` — n<5 shows — (suppressed); low_response = response rate < 50% (dashboard badge)
 
-| segment | invited_apr | n_apr | response_rate_apr_pct | enps_apr | invited_oct | n_oct | response_rate_oct_pct | enps_oct | enps_change | suppressed_apr | suppressed_oct |
-|---|---|---|---|---|---|---|---|---|---|---|---|
-| Central | 153 | 120 | 78.4 | 15.8 | 156 | 118 | 75.6 | 0.8 | -15 | False | False |
-| Enterprise | 110 | 91 | 82.7 | 25.3 | 108 | 26 | 24.1 | 23.1 | -2.2 | False | False |
-| Geo Expansion | 115 | 87 | 75.7 | 2.3 | 122 | 110 | 90.2 | -0.9 | -3.2 | False | False |
-| Intercity | 208 | 170 | 81.7 | 0 | 228 | 186 | 81.6 | -19.4 | -19.4 | False | False |
-| Intracity | 322 | 261 | 81.1 | 8 | 338 | 275 | 81.4 | 9.8 | 1.8 | False | False |
-| Packers & Movers | 171 | 137 | 80.1 | 21.9 | 183 | 84 | 45.9 | 34.5 | 12.6 | False | False |
+| segment | invited_apr | n_apr | response_rate_apr_pct | enps_apr | invited_oct | n_oct | response_rate_oct_pct | enps_oct | enps_change | suppressed_apr | suppressed_oct | low_response_apr | low_response_oct |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| Central | 153 | 120 | 78.4 | 15.8 | 156 | 118 | 75.6 | 0.8 | -15 | False | False | False | False |
+| Enterprise | 110 | 91 | 82.7 | 25.3 | 108 | 26 | 24.1 | 23.1 | -2.2 | False | False | False | True |
+| Geo Expansion | 115 | 87 | 75.7 | 2.3 | 122 | 110 | 90.2 | -0.9 | -3.2 | False | False | False | False |
+| Intercity | 208 | 170 | 81.7 | 0 | 228 | 186 | 81.6 | -19.4 | -19.4 | False | False | False | False |
+| Intracity | 322 | 261 | 81.1 | 8 | 338 | 275 | 81.4 | 9.8 | 1.8 | False | False | False | False |
+| Packers & Movers | 171 | 137 | 80.1 | 21.9 | 183 | 84 | 45.9 | 34.5 | 12.6 | False | False | False | True |
 
 ### Segment: Function
 
-`metrics_enps.segment('function')` — n<5 shows — (suppressed)
+`metrics_enps.segment('function')` — n<5 shows — (suppressed); low_response = response rate < 50% (dashboard badge)
 
-| segment | invited_apr | n_apr | response_rate_apr_pct | enps_apr | invited_oct | n_oct | response_rate_oct_pct | enps_oct | enps_change | suppressed_apr | suppressed_oct |
-|---|---|---|---|---|---|---|---|---|---|---|---|
-| Category & Supply | 150 | 128 | 85.3 | 9.4 | 149 | 96 | 64.4 | 21.9 | 12.5 | False | False |
-| Customer Support | 139 | 105 | 75.5 | 11.4 | 147 | 96 | 65.3 | -1 | -12.5 | False | False |
-| Data & Analytics | 15 | 12 | 80 | 0 | 15 | 10 | 66.7 | 20 | 20 | False | False |
-| Design & Research | 6 | 4 | 66.7 | — | 7 | 4 | 57.1 | — | — | True | True |
-| Engineering | 62 | 51 | 82.3 | 11.8 | 60 | 49 | 81.7 | 4.1 | -7.7 | False | False |
-| Finance | 18 | 13 | 72.2 | 23.1 | 20 | 14 | 70 | -7.1 | -30.2 | False | False |
-| Legal & Compliance | 19 | 17 | 89.5 | 47.1 | 19 | 15 | 78.9 | 33.3 | -13.7 | False | False |
-| Operations | 396 | 311 | 78.5 | 10.9 | 427 | 303 | 71 | 0.7 | -10.3 | False | False |
-| People & Culture | 17 | 11 | 64.7 | 9.1 | 17 | 11 | 64.7 | -18.2 | -27.3 | False | False |
-| Product | 16 | 12 | 75 | -8.3 | 18 | 15 | 83.3 | -13.3 | -5 | False | False |
-| Sales | 241 | 202 | 83.8 | 8.9 | 256 | 186 | 72.7 | 1.6 | -7.3 | False | False |
+| segment | invited_apr | n_apr | response_rate_apr_pct | enps_apr | invited_oct | n_oct | response_rate_oct_pct | enps_oct | enps_change | suppressed_apr | suppressed_oct | low_response_apr | low_response_oct |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| Category & Supply | 150 | 128 | 85.3 | 9.4 | 149 | 96 | 64.4 | 21.9 | 12.5 | False | False | False | False |
+| Customer Support | 139 | 105 | 75.5 | 11.4 | 147 | 96 | 65.3 | -1 | -12.5 | False | False | False | False |
+| Data & Analytics | 15 | 12 | 80 | 0 | 15 | 10 | 66.7 | 20 | 20 | False | False | False | False |
+| Design & Research | 6 | 4 | 66.7 | — | 7 | 4 | 57.1 | — | — | True | True | False | False |
+| Engineering | 62 | 51 | 82.3 | 11.8 | 60 | 49 | 81.7 | 4.1 | -7.7 | False | False | False | False |
+| Finance | 18 | 13 | 72.2 | 23.1 | 20 | 14 | 70 | -7.1 | -30.2 | False | False | False | False |
+| Legal & Compliance | 19 | 17 | 89.5 | 47.1 | 19 | 15 | 78.9 | 33.3 | -13.7 | False | False | False | False |
+| Operations | 396 | 311 | 78.5 | 10.9 | 427 | 303 | 71 | 0.7 | -10.3 | False | False | False | False |
+| People & Culture | 17 | 11 | 64.7 | 9.1 | 17 | 11 | 64.7 | -18.2 | -27.3 | False | False | False | False |
+| Product | 16 | 12 | 75 | -8.3 | 18 | 15 | 83.3 | -13.3 | -5 | False | False | False | False |
+| Sales | 241 | 202 | 83.8 | 8.9 | 256 | 186 | 72.7 | 1.6 | -7.3 | False | False | False | False |
 
 ### Segment: Job family
 
-`metrics_enps.segment('job_family')` — n<5 shows — (suppressed)
+`metrics_enps.segment('job_family')` — n<5 shows — (suppressed); low_response = response rate < 50% (dashboard badge)
 
-| segment | invited_apr | n_apr | response_rate_apr_pct | enps_apr | invited_oct | n_oct | response_rate_oct_pct | enps_oct | enps_change | suppressed_apr | suppressed_oct |
-|---|---|---|---|---|---|---|---|---|---|---|---|
-| Non-Tech | 980 | 787 | 80.3 | 11.2 | 1035 | 721 | 69.7 | 3.7 | -7.4 | False | False |
-| Tech | 99 | 79 | 79.8 | 8.9 | 100 | 78 | 78 | -1.3 | -10.1 | False | False |
+| segment | invited_apr | n_apr | response_rate_apr_pct | enps_apr | invited_oct | n_oct | response_rate_oct_pct | enps_oct | enps_change | suppressed_apr | suppressed_oct | low_response_apr | low_response_oct |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| Non-Tech | 980 | 787 | 80.3 | 11.2 | 1035 | 721 | 69.7 | 3.7 | -7.4 | False | False | False | False |
+| Tech | 99 | 79 | 79.8 | 8.9 | 100 | 78 | 78 | -1.3 | -10.1 | False | False | False | False |
 
 ### Segment: Grade
 
-`metrics_enps.segment('grade')` — n<5 shows — (suppressed)
+`metrics_enps.segment('grade')` — n<5 shows — (suppressed); low_response = response rate < 50% (dashboard badge)
 
-| segment | invited_apr | n_apr | response_rate_apr_pct | enps_apr | invited_oct | n_oct | response_rate_oct_pct | enps_oct | enps_change | suppressed_apr | suppressed_oct |
-|---|---|---|---|---|---|---|---|---|---|---|---|
-| TBA | 63 | 49 | 77.8 | -4.1 | 88 | 57 | 64.8 | 0 | 4.1 | False | False |
-| G1 | 189 | 148 | 78.3 | 8.1 | 196 | 130 | 66.3 | -5.4 | -13.5 | False | False |
-| G2 | 204 | 160 | 78.4 | 7.5 | 213 | 138 | 64.8 | -11.6 | -19.1 | False | False |
-| G3 | 191 | 159 | 83.2 | 6.3 | 203 | 127 | 62.6 | -1.6 | -7.9 | False | False |
-| G4 | 169 | 135 | 79.9 | 12.6 | 168 | 134 | 79.8 | 15.7 | 3.1 | False | False |
-| G5 | 124 | 103 | 83.1 | 19.4 | 124 | 97 | 78.2 | 11.3 | -8.1 | False | False |
-| G6 | 98 | 81 | 82.7 | 18.5 | 99 | 78 | 78.8 | 23.1 | 4.6 | False | False |
-| G7 | 26 | 20 | 76.9 | 20 | 27 | 25 | 92.6 | 12 | -8 | False | False |
-| G8 | 9 | 7 | 77.8 | 85.7 | 11 | 8 | 72.7 | 12.5 | -73.2 | False | False |
-| G9 | 4 | 2 | 50 | — | 4 | 4 | 100 | — | — | True | True |
-| G10 | 2 | 2 | 100 | — | 2 | 1 | 50 | — | — | True | True |
+| segment | invited_apr | n_apr | response_rate_apr_pct | enps_apr | invited_oct | n_oct | response_rate_oct_pct | enps_oct | enps_change | suppressed_apr | suppressed_oct | low_response_apr | low_response_oct |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| TBA | 63 | 49 | 77.8 | -4.1 | 88 | 57 | 64.8 | 0 | 4.1 | False | False | False | False |
+| G1 | 189 | 148 | 78.3 | 8.1 | 196 | 130 | 66.3 | -5.4 | -13.5 | False | False | False | False |
+| G2 | 204 | 160 | 78.4 | 7.5 | 213 | 138 | 64.8 | -11.6 | -19.1 | False | False | False | False |
+| G3 | 191 | 159 | 83.2 | 6.3 | 203 | 127 | 62.6 | -1.6 | -7.9 | False | False | False | False |
+| G4 | 169 | 135 | 79.9 | 12.6 | 168 | 134 | 79.8 | 15.7 | 3.1 | False | False | False | False |
+| G5 | 124 | 103 | 83.1 | 19.4 | 124 | 97 | 78.2 | 11.3 | -8.1 | False | False | False | False |
+| G6 | 98 | 81 | 82.7 | 18.5 | 99 | 78 | 78.8 | 23.1 | 4.6 | False | False | False | False |
+| G7 | 26 | 20 | 76.9 | 20 | 27 | 25 | 92.6 | 12 | -8 | False | False | False | False |
+| G8 | 9 | 7 | 77.8 | 85.7 | 11 | 8 | 72.7 | 12.5 | -73.2 | False | False | False | False |
+| G9 | 4 | 2 | 50 | — | 4 | 4 | 100 | — | — | True | True | False | False |
+| G10 | 2 | 2 | 100 | — | 2 | 1 | 50 | — | — | True | True | False | False |
 
 ### Segment: Location
 
-`metrics_enps.segment('location')` — n<5 shows — (suppressed)
+`metrics_enps.segment('location')` — n<5 shows — (suppressed); low_response = response rate < 50% (dashboard badge)
 
-| segment | invited_apr | n_apr | response_rate_apr_pct | enps_apr | invited_oct | n_oct | response_rate_oct_pct | enps_oct | enps_change | suppressed_apr | suppressed_oct |
-|---|---|---|---|---|---|---|---|---|---|---|---|
-| Ahmedabad | 58 | 47 | 81 | 14.9 | 61 | 42 | 68.9 | 16.7 | 1.8 | False | False |
-| Bengaluru | 57 | 46 | 80.7 | 0 | 67 | 48 | 71.6 | 0 | 0 | False | False |
-| Bengaluru HO | 247 | 200 | 81 | 18 | 250 | 184 | 73.6 | 8.7 | -9.3 | False | False |
-| Chennai | 81 | 64 | 79 | 3.1 | 80 | 55 | 68.8 | 16.4 | 13.2 | False | False |
-| Delhi NCR | 135 | 109 | 80.7 | 17.4 | 144 | 102 | 70.8 | 1 | -16.5 | False | False |
-| Hyderabad | 114 | 88 | 77.2 | 2.3 | 121 | 83 | 68.6 | -1.2 | -3.5 | False | False |
-| Jaipur | 50 | 42 | 84 | 4.8 | 49 | 36 | 73.5 | 2.8 | -2 | False | False |
-| Kolkata | 74 | 61 | 82.4 | 19.7 | 81 | 60 | 74.1 | -6.7 | -26.3 | False | False |
-| Lucknow | 45 | 31 | 68.9 | 6.5 | 49 | 31 | 63.3 | 0 | -6.5 | False | False |
-| Mumbai | 129 | 104 | 80.6 | 3.8 | 134 | 93 | 69.4 | 6.5 | 2.6 | False | False |
-| Pune | 89 | 74 | 83.1 | 12.2 | 99 | 65 | 65.7 | -13.8 | -26 | False | False |
+| segment | invited_apr | n_apr | response_rate_apr_pct | enps_apr | invited_oct | n_oct | response_rate_oct_pct | enps_oct | enps_change | suppressed_apr | suppressed_oct | low_response_apr | low_response_oct |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| Ahmedabad | 58 | 47 | 81 | 14.9 | 61 | 42 | 68.9 | 16.7 | 1.8 | False | False | False | False |
+| Bengaluru | 57 | 46 | 80.7 | 0 | 67 | 48 | 71.6 | 0 | 0 | False | False | False | False |
+| Bengaluru HO | 247 | 200 | 81 | 18 | 250 | 184 | 73.6 | 8.7 | -9.3 | False | False | False | False |
+| Chennai | 81 | 64 | 79 | 3.1 | 80 | 55 | 68.8 | 16.4 | 13.2 | False | False | False | False |
+| Delhi NCR | 135 | 109 | 80.7 | 17.4 | 144 | 102 | 70.8 | 1 | -16.5 | False | False | False | False |
+| Hyderabad | 114 | 88 | 77.2 | 2.3 | 121 | 83 | 68.6 | -1.2 | -3.5 | False | False | False | False |
+| Jaipur | 50 | 42 | 84 | 4.8 | 49 | 36 | 73.5 | 2.8 | -2 | False | False | False | False |
+| Kolkata | 74 | 61 | 82.4 | 19.7 | 81 | 60 | 74.1 | -6.7 | -26.3 | False | False | False | False |
+| Lucknow | 45 | 31 | 68.9 | 6.5 | 49 | 31 | 63.3 | 0 | -6.5 | False | False | False | False |
+| Mumbai | 129 | 104 | 80.6 | 3.8 | 134 | 93 | 69.4 | 6.5 | 2.6 | False | False | False | False |
+| Pune | 89 | 74 | 83.1 | 12.2 | 99 | 65 | 65.7 | -13.8 | -26 | False | False | False | False |
 
 ### Segment: Location type
 
-`metrics_enps.segment('location_type')` — n<5 shows — (suppressed)
+`metrics_enps.segment('location_type')` — n<5 shows — (suppressed); low_response = response rate < 50% (dashboard badge)
 
-| segment | invited_apr | n_apr | response_rate_apr_pct | enps_apr | invited_oct | n_oct | response_rate_oct_pct | enps_oct | enps_change | suppressed_apr | suppressed_oct |
-|---|---|---|---|---|---|---|---|---|---|---|---|
-| City | 832 | 666 | 80 | 8.9 | 885 | 615 | 69.5 | 1.6 | -7.2 | False | False |
-| HO | 247 | 200 | 81 | 18 | 250 | 184 | 73.6 | 8.7 | -9.3 | False | False |
+| segment | invited_apr | n_apr | response_rate_apr_pct | enps_apr | invited_oct | n_oct | response_rate_oct_pct | enps_oct | enps_change | suppressed_apr | suppressed_oct | low_response_apr | low_response_oct |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| City | 832 | 666 | 80 | 8.9 | 885 | 615 | 69.5 | 1.6 | -7.2 | False | False | False | False |
+| HO | 247 | 200 | 81 | 18 | 250 | 184 | 73.6 | 8.7 | -9.3 | False | False | False | False |
 
 ### Segment: Company
 
-`metrics_enps.segment('company')` — n<5 shows — (suppressed)
+`metrics_enps.segment('company')` — n<5 shows — (suppressed); low_response = response rate < 50% (dashboard badge)
 
-| segment | invited_apr | n_apr | response_rate_apr_pct | enps_apr | invited_oct | n_oct | response_rate_oct_pct | enps_oct | enps_change | suppressed_apr | suppressed_oct |
-|---|---|---|---|---|---|---|---|---|---|---|---|
-| Porter | 837 | 680 | 81.2 | 13.5 | 883 | 618 | 70 | 3.2 | -10.3 | False | False |
-| SmartShift Info Marketing Services Pvt Ltd | 242 | 186 | 76.9 | 1.6 | 252 | 181 | 71.8 | 3.3 | 1.7 | False | False |
+| segment | invited_apr | n_apr | response_rate_apr_pct | enps_apr | invited_oct | n_oct | response_rate_oct_pct | enps_oct | enps_change | suppressed_apr | suppressed_oct | low_response_apr | low_response_oct |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| Porter | 837 | 680 | 81.2 | 13.5 | 883 | 618 | 70 | 3.2 | -10.3 | False | False | False | False |
+| SmartShift Info Marketing Services Pvt Ltd | 242 | 186 | 76.9 | 1.6 | 252 | 181 | 71.8 | 3.3 | 1.7 | False | False | False | False |
 
 ### Segment: Tenure band
 
-`metrics_enps.segment('tenure_band')` — n<5 shows — (suppressed)
+`metrics_enps.segment('tenure_band')` — n<5 shows — (suppressed); low_response = response rate < 50% (dashboard badge)
 
-| segment | invited_apr | n_apr | response_rate_apr_pct | enps_apr | invited_oct | n_oct | response_rate_oct_pct | enps_oct | enps_change | suppressed_apr | suppressed_oct |
-|---|---|---|---|---|---|---|---|---|---|---|---|
-| <6m | 170 | 137 | 80.6 | -19.7 | 196 | 139 | 70.9 | -27.3 | -7.6 | False | False |
-| 6-12m | 130 | 97 | 74.6 | 9.3 | 154 | 116 | 75.3 | 8.6 | -0.7 | False | False |
-| 1-2y | 250 | 196 | 78.4 | 18.9 | 233 | 152 | 65.2 | -2 | -20.9 | False | False |
-| 2-4y | 238 | 195 | 81.9 | 14.9 | 271 | 186 | 68.6 | 19.9 | 5 | False | False |
-| 4y+ | 291 | 241 | 82.8 | 19.5 | 281 | 206 | 73.3 | 9.7 | -9.8 | False | False |
+| segment | invited_apr | n_apr | response_rate_apr_pct | enps_apr | invited_oct | n_oct | response_rate_oct_pct | enps_oct | enps_change | suppressed_apr | suppressed_oct | low_response_apr | low_response_oct |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| <6m | 170 | 137 | 80.6 | -19.7 | 196 | 139 | 70.9 | -27.3 | -7.6 | False | False | False | False |
+| 6-12m | 130 | 97 | 74.6 | 9.3 | 154 | 116 | 75.3 | 8.6 | -0.7 | False | False | False | False |
+| 1-2y | 250 | 196 | 78.4 | 18.9 | 233 | 152 | 65.2 | -2 | -20.9 | False | False | False | False |
+| 2-4y | 238 | 195 | 81.9 | 14.9 | 271 | 186 | 68.6 | 19.9 | 5 | False | False | False | False |
+| 4y+ | 291 | 241 | 82.8 | 19.5 | 281 | 206 | 73.3 | 9.7 | -9.8 | False | False | False | False |
 
 ### Segment: Performance rating
 
-`metrics_enps.segment('performance_rating')` — n<5 shows — (suppressed)
+`metrics_enps.segment('performance_rating')` — n<5 shows — (suppressed); low_response = response rate < 50% (dashboard badge)
 
-| segment | invited_apr | n_apr | response_rate_apr_pct | enps_apr | invited_oct | n_oct | response_rate_oct_pct | enps_oct | enps_change | suppressed_apr | suppressed_oct |
-|---|---|---|---|---|---|---|---|---|---|---|---|
-| Below Expectations | 56 | 43 | 76.8 | -2.3 | 50 | 32 | 64 | 12.5 | 14.8 | False | False |
-| Game Changer | 83 | 70 | 84.3 | 14.3 | 69 | 57 | 82.6 | 21.1 | 6.8 | False | False |
-| High Impact Player | 198 | 161 | 81.3 | 13.7 | 164 | 118 | 72 | 9.3 | -4.3 | False | False |
-| Needs Improvement | 181 | 143 | 79 | 11.2 | 162 | 114 | 70.4 | 0 | -11.2 | False | False |
-| Not Rated - New Joiner | 97 | 77 | 79.4 | -22.1 | 282 | 202 | 71.6 | -16.3 | 5.7 | False | False |
-| Solid Performer | 464 | 372 | 80.2 | 17.5 | 408 | 276 | 67.6 | 11.6 | -5.9 | False | False |
+| segment | invited_apr | n_apr | response_rate_apr_pct | enps_apr | invited_oct | n_oct | response_rate_oct_pct | enps_oct | enps_change | suppressed_apr | suppressed_oct | low_response_apr | low_response_oct |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| Below Expectations | 56 | 43 | 76.8 | -2.3 | 50 | 32 | 64 | 12.5 | 14.8 | False | False | False | False |
+| Game Changer | 83 | 70 | 84.3 | 14.3 | 69 | 57 | 82.6 | 21.1 | 6.8 | False | False | False | False |
+| High Impact Player | 198 | 161 | 81.3 | 13.7 | 164 | 118 | 72 | 9.3 | -4.3 | False | False | False | False |
+| Needs Improvement | 181 | 143 | 79 | 11.2 | 162 | 114 | 70.4 | 0 | -11.2 | False | False | False | False |
+| Not Rated - New Joiner | 97 | 77 | 79.4 | -22.1 | 282 | 202 | 71.6 | -16.3 | 5.7 | False | False | False | False |
+| Solid Performer | 464 | 372 | 80.2 | 17.5 | 408 | 276 | 67.6 | 11.6 | -5.9 | False | False | False | False |
 
 ### Segment: Compa band
 
-`metrics_enps.segment('compa_band')` — n<5 shows — (suppressed)
+`metrics_enps.segment('compa_band')` — n<5 shows — (suppressed); low_response = response rate < 50% (dashboard badge)
 
-| segment | invited_apr | n_apr | response_rate_apr_pct | enps_apr | invited_oct | n_oct | response_rate_oct_pct | enps_oct | enps_change | suppressed_apr | suppressed_oct |
-|---|---|---|---|---|---|---|---|---|---|---|---|
-| Below | 329 | 260 | 79 | -6.2 | 299 | 207 | 69.2 | -7.7 | -1.6 | False | False |
-| At | 527 | 417 | 79.1 | 20.9 | 591 | 424 | 71.7 | 3.1 | -17.8 | False | False |
-| Above | 213 | 179 | 84 | 15.6 | 235 | 161 | 68.5 | 17.4 | 1.7 | False | False |
-| Unknown | 10 | 10 | 100 | -40 | 10 | 7 | 70 | 14.3 | 54.3 | False | False |
+| segment | invited_apr | n_apr | response_rate_apr_pct | enps_apr | invited_oct | n_oct | response_rate_oct_pct | enps_oct | enps_change | suppressed_apr | suppressed_oct | low_response_apr | low_response_oct |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| Below | 329 | 260 | 79 | -6.2 | 299 | 207 | 69.2 | -7.7 | -1.6 | False | False | False | False |
+| At | 527 | 417 | 79.1 | 20.9 | 591 | 424 | 71.7 | 3.1 | -17.8 | False | False | False | False |
+| Above | 213 | 179 | 84 | 15.6 | 235 | 161 | 68.5 | 17.4 | 1.7 | False | False | False | False |
+| Unknown | 10 | 10 | 100 | -40 | 10 | 7 | 70 | 14.3 | 54.3 | False | False | False | False |
 
 ### Segment: Manager status
 
-`metrics_enps.segment('manager_status')` — n<5 shows — (suppressed)
+`metrics_enps.segment('manager_status')` — n<5 shows — (suppressed); low_response = response rate < 50% (dashboard badge)
 
-| segment | invited_apr | n_apr | response_rate_apr_pct | enps_apr | invited_oct | n_oct | response_rate_oct_pct | enps_oct | enps_change | suppressed_apr | suppressed_oct |
-|---|---|---|---|---|---|---|---|---|---|---|---|
-| Same manager | 1021 | 818 | 80.1 | 11.4 | 907 | 629 | 69.3 | 13 | 1.7 | False | False |
-| Changed manager | 58 | 48 | 82.8 | 4.2 | 50 | 44 | 88 | -59.1 | -63.3 | False | False |
-| New joiner (first manager) | 0 | 0 | — | — | 178 | 126 | 70.8 | -23.8 | — | True | False |
+| segment | invited_apr | n_apr | response_rate_apr_pct | enps_apr | invited_oct | n_oct | response_rate_oct_pct | enps_oct | enps_change | suppressed_apr | suppressed_oct | low_response_apr | low_response_oct |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| Same manager | 1021 | 818 | 80.1 | 11.4 | 907 | 629 | 69.3 | 13 | 1.7 | False | False | False | False |
+| Changed manager | 58 | 48 | 82.8 | 4.2 | 50 | 44 | 88 | -59.1 | -63.3 | False | False | False | False |
+| New joiner (first manager) | 0 | 0 | — | — | 178 | 126 | 70.8 | -23.8 | — | True | False | False | False |
+
+### Segment: Joined this FY
+
+`metrics_enps.segment('joined_this_fy')` — n<5 shows — (suppressed); low_response = response rate < 50% (dashboard badge)
+
+| segment | invited_apr | n_apr | response_rate_apr_pct | enps_apr | invited_oct | n_oct | response_rate_oct_pct | enps_oct | enps_change | suppressed_apr | suppressed_oct | low_response_apr | low_response_oct |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| False | 1074 | 861 | 80.2 | 11.3 | 935 | 656 | 70.2 | 9.5 | -1.8 | False | False | False | False |
+| True | 5 | 5 | 100 | -40 | 200 | 143 | 71.5 | -25.2 | 14.8 | False | False | False | False |
+
+### Segment: Interviewer
+
+`metrics_enps.segment('is_interviewer')` — n<5 shows — (suppressed); low_response = response rate < 50% (dashboard badge)
+
+| segment | invited_apr | n_apr | response_rate_apr_pct | enps_apr | invited_oct | n_oct | response_rate_oct_pct | enps_oct | enps_change | suppressed_apr | suppressed_oct | low_response_apr | low_response_oct |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| False | 1022 | 823 | 80.5 | 10.3 | 1078 | 756 | 70.1 | 1.5 | -8.9 | False | False | False | False |
+| True | 57 | 43 | 75.4 | 23.3 | 57 | 43 | 75.4 | 34.9 | 11.6 | False | False | False | False |
+
+### Segment: Hiring manager
+
+`metrics_enps.segment('is_hiring_manager')` — n<5 shows — (suppressed); low_response = response rate < 50% (dashboard badge)
+
+| segment | invited_apr | n_apr | response_rate_apr_pct | enps_apr | invited_oct | n_oct | response_rate_oct_pct | enps_oct | enps_change | suppressed_apr | suppressed_oct | low_response_apr | low_response_oct |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| False | 932 | 745 | 79.9 | 7.4 | 988 | 684 | 69.2 | 1 | -6.4 | False | False | False | False |
+| True | 147 | 121 | 82.3 | 33.1 | 147 | 115 | 78.2 | 16.5 | -16.5 | False | False | False | False |
 
 ### Drivers Q2–Q6 by wave
 
@@ -271,9 +309,30 @@ Survey groups with fewer than 5 respondents show — (suppressed). Percentages a
 
 | nps_group | n | exited | pct_exited | pct_voluntary_exit | pct_regrettable_exit | suppressed |
 |---|---|---|---|---|---|---|
-| Detractor | 245 | 78 | 31.8 | 27.8 | 21.2 | False |
-| Passive | 281 | 34 | 12.1 | 10 | 7.8 | False |
-| Promoter | 340 | 19 | 5.6 | 5 | 4.1 | False |
+| Detractor | 245 | 78 | 31.8 | 87.2 | 21.2 | False |
+| Passive | 281 | 34 | 12.1 | 82.4 | 7.8 | False |
+| Promoter | 340 | 19 | 5.6 | 89.5 | 4.1 | False |
+
+### Non-response bias — overall
+
+`metrics_enps.non_response_bias(None)` — panel-eligible only (invited to both waves AND answered in April): APRIL eNPS of October respondents vs October non-respondents. Negative gap = the people who skipped October were less positive, so October eNPS is flattered
+
+| segment | n_eligible | n_oct_respondents | n_oct_nonrespondents | oct_response_rate_pct | apr_enps_oct_respondents | apr_enps_oct_nonrespondents | gap_nonresp_minus_resp | suppressed | low_response |
+|---|---|---|---|---|---|---|---|---|---|
+| All | 753 | 526 | 227 | 69.9 | 20.2 | 15.9 | -4.3 | False | False |
+
+### Non-response bias — by thread
+
+`metrics_enps.non_response_bias('thread')` — as above, by thread; low_response = October response rate < 50%
+
+| segment | n_eligible | n_oct_respondents | n_oct_nonrespondents | oct_response_rate_pct | apr_enps_oct_respondents | apr_enps_oct_nonrespondents | gap_nonresp_minus_resp | suppressed | low_response |
+|---|---|---|---|---|---|---|---|---|---|
+| Central | 106 | 83 | 23 | 78.3 | 32.5 | 0 | -32.5 | False | False |
+| Enterprise | 77 | 17 | 60 | 22.1 | 41.2 | 30 | -11.2 | False | True |
+| Geo Expansion | 77 | 71 | 6 | 92.2 | 7 | 16.7 | 9.6 | False | False |
+| Intercity | 142 | 117 | 25 | 82.4 | 11.1 | -16 | -27.1 | False | False |
+| Intracity | 230 | 189 | 41 | 82.2 | 16.9 | 17.1 | 0.1 | False | False |
+| Packers & Movers | 121 | 49 | 72 | 40.5 | 44.9 | 19.4 | -25.5 | False | True |
 
 ## Hiring
 
@@ -360,18 +419,18 @@ Survey groups with fewer than 5 respondents show — (suppressed). Percentages a
 
 ### Recruiter load vs target
 
-`metrics_hiring.recruiters()` — accepted offers per month over Apr–Oct 2026 (7 months), all accepted offers incl. later backouts
+`metrics_hiring.recruiters()` — two attainment versions over Apr–Oct 2026 (7 months): **_all** = all accepted offers incl. candidates who later backed out; **_excl_bo** = accepted offers excluding backed-out candidates. Attainment = accepted per month ÷ monthly target
 
-| recruiter | recruiter_id | reqs | pct_of_reqs | open_reqs | open_past_sla | filled | median_ttf_days | pct_within_sla | offers_accepted | accepted_per_month | monthly_offer_target | attainment_pct |
-|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| Rhea Kapoor | TA01 | 106 | 35.3 | 20 | 14 | 86 | 23 | 76.7 | 90 | 12.86 | 14 | 91.8 |
-| Vikram Nair | TA02 | 44 | 14.7 | 11 | 5 | 32 | 26 | 87.5 | 35 | 5 | 8 | 62.5 |
-| Tanvi Joshi | TA03 | 35 | 11.7 | 5 | 3 | 29 | 25 | 75.9 | 31 | 4.43 | 10 | 44.3 |
-| Karan Bhat | TA06 | 32 | 10.7 | 4 | 3 | 27 | 20 | 88.9 | 27 | 3.86 | 8 | 48.2 |
-| Imran Sheikh | TA04 | 30 | 10 | 10 | 6 | 19 | 27 | 68.4 | 21 | 3 | 10 | 30 |
-| Divya Menon | TA07 | 28 | 9.3 | 7 | 4 | 20 | 52 | 45 | 21 | 3 | 7 | 42.9 |
-| Arnav Gupta | TA08 | 15 | 5 | 0 | 0 | 13 | 17 | 84.6 | 14 | 2 | 7 | 28.6 |
-| Meghna Rao | TA05 | 10 | 3.3 | 4 | 2 | 5 | 49 | 40 | 6 | 0.86 | 10 | 8.6 |
+| recruiter | recruiter_id | reqs | pct_of_reqs | open_reqs | open_past_sla | filled | median_ttf_days | pct_within_sla | monthly_offer_target | offers_accepted_all | accepted_per_month_all | attainment_all_pct | offers_accepted_excl_bo | accepted_per_month_excl_bo | attainment_excl_bo_pct |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| Rhea Kapoor | TA01 | 106 | 35.3 | 20 | 14 | 86 | 23 | 76.7 | 14 | 90 | 12.86 | 91.8 | 86 | 12.29 | 87.8 |
+| Vikram Nair | TA02 | 44 | 14.7 | 11 | 5 | 32 | 26 | 87.5 | 8 | 35 | 5 | 62.5 | 32 | 4.57 | 57.1 |
+| Tanvi Joshi | TA03 | 35 | 11.7 | 5 | 3 | 29 | 25 | 75.9 | 10 | 31 | 4.43 | 44.3 | 29 | 4.14 | 41.4 |
+| Karan Bhat | TA06 | 32 | 10.7 | 4 | 3 | 27 | 20 | 88.9 | 8 | 27 | 3.86 | 48.2 | 27 | 3.86 | 48.2 |
+| Imran Sheikh | TA04 | 30 | 10 | 10 | 6 | 19 | 27 | 68.4 | 10 | 21 | 3 | 30 | 19 | 2.71 | 27.1 |
+| Divya Menon | TA07 | 28 | 9.3 | 7 | 4 | 20 | 52 | 45 | 7 | 21 | 3 | 42.9 | 20 | 2.86 | 40.8 |
+| Arnav Gupta | TA08 | 15 | 5 | 0 | 0 | 13 | 17 | 84.6 | 7 | 14 | 2 | 28.6 | 13 | 1.86 | 26.5 |
+| Meghna Rao | TA05 | 10 | 3.3 | 4 | 2 | 5 | 49 | 40 | 10 | 6 | 0.86 | 8.6 | 5 | 0.71 | 7.1 |
 
 ### Slowest R1 interviewers (min 5 interviews with feedback)
 

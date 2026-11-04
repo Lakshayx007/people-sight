@@ -48,6 +48,13 @@ def rkey(eid: str) -> str:
     return "R" + hashlib.sha256((KEY_SALT + eid).encode()).hexdigest()[:10]
 
 
+# Every attribute the survey can be sliced by. v_survey and v_invited carry ALL of these with identical names,
+# so one filter fragment works on numerator and denominator.
+SLICE_COLS = ["company", "thread", "function", "job_family", "grade", "grade_num", "location", "location_type",
+              "tenure_band", "performance_rating", "compa_band", "manager_status", "joined_between_waves", "joined_this_fy",
+              "is_interviewer", "is_hiring_manager", "invited_both_waves", "responded_both_waves", "exited_after_wave",
+              "exit_type_after_wave", "regrettable_after_wave"]
+
 # ── survey (valid responses only, no ID, no name) ────────────────────────────
 s = resp[resp.is_valid].copy()
 s["respondent_key"] = s.employee_id.map(rkey)
@@ -55,15 +62,16 @@ s["is_interviewer"] = s.employee_id.isin(interviewers)
 s["is_hiring_manager"] = s.employee_id.isin(managers)
 s["joined_this_fy"] = s.employee_id.map(emp_i.date_of_joining) >= FY_START
 s["submitted_date"] = s.submitted_on.dt.normalize()
+both_inv = set(emp.loc[emp.active_on_apr_open & emp.active_on_oct_open, "employee_id"])
+s["invited_both_waves"] = s.employee_id.isin(both_inv)
+s["responded_both_waves"] = s.in_panel
+s["exit_type_after_wave"] = s.exit_type.where(s.exited_after_wave)
+s["regrettable_after_wave"] = s.exited_after_wave & s.is_regrettable_exit.astype("boolean").fillna(False).astype(bool)
 s["q1"] = s.q1_clean.astype(int)
 for g, col in [("Promoter", "is_promoter"), ("Passive", "is_passive"), ("Detractor", "is_detractor")]:
     s[col] = (s.nps_group == g).astype(int)
 SURVEY_COLS = ["wave", "respondent_key", "submitted_date", "q1", "nps_group", "is_promoter", "is_passive", "is_detractor",
-               "q2", "q3", "q4", "q5", "q6", "comment", "comment_theme", "in_panel",
-               "company", "thread", "function", "job_family", "grade", "grade_num", "location", "location_type",
-               "tenure_band", "performance_rating", "compa_band", "manager_status", "joined_between_waves", "joined_this_fy",
-               "is_interviewer", "is_hiring_manager", "is_exited", "exited_after_wave", "exit_type", "exit_classification",
-               "is_regrettable_exit"]
+               "q2", "q3", "q4", "q5", "q6", "comment", "comment_theme"] + SLICE_COLS
 t_survey = s[SURVEY_COLS].reset_index(drop=True)
 assert not any(c in t_survey.columns for c in ("employee_id", "employee_name", "response_id"))
 
@@ -81,11 +89,21 @@ inv = pd.concat(rows, ignore_index=True)
 inv["is_interviewer"] = inv.employee_id.isin(interviewers)
 inv["is_hiring_manager"] = inv.employee_id.isin(managers)
 inv["joined_this_fy"] = inv.date_of_joining >= FY_START
-INVITED_COLS = ["wave", "company", "thread", "function", "job_family", "grade", "grade_num", "location", "location_type",
-                "tenure_band", "performance_rating", "compa_band", "manager_status", "joined_between_waves", "joined_this_fy",
-                "is_interviewer", "is_hiring_manager", "is_exited", "responded"]
+inv["invited_both_waves"] = inv.employee_id.isin(both_inv)
+both_resp = set(s.loc[s.responded_both_waves, "employee_id"])
+inv["responded_both_waves"] = inv.employee_id.isin(both_resp)
+close = inv.wave.map(lambda w: WAVES[w]["close"])
+inv["exited_after_wave"] = (inv.date_of_exit.notna() & (inv.date_of_exit > close)) | (inv.exit_date_unknown & (inv.wave == "Apr"))
+inv["exit_type_after_wave"] = inv.exit_type.where(inv.exited_after_wave)
+inv["regrettable_after_wave"] = inv.exited_after_wave & inv.is_regrettable_exit.astype("boolean").fillna(False).astype(bool)
+INVITED_COLS = ["wave"] + SLICE_COLS + ["responded"]
 t_invited = inv[INVITED_COLS].reset_index(drop=True)
 assert int(t_invited.responded.sum()) == len(t_survey)
+# survey rows must carry the same slice values as the matching invited row
+_chk = s.merge(inv[["employee_id", "wave"] + SLICE_COLS], on=["employee_id", "wave"], suffixes=("", "_inv"))
+assert len(_chk) == len(s)
+for _c in SLICE_COLS:
+    assert (_chk[_c].astype(str) == _chk[_c + "_inv"].astype(str)).all(), _c
 
 # ── employees (no name) ──────────────────────────────────────────────────────
 t_employees = emp.drop(columns=["employee_name", "annual_ctc_raw"])
@@ -108,13 +126,11 @@ for name, df in [("t_survey", t_survey), ("t_invited", t_invited), ("t_employees
 VIEWS = {
 "v_survey": ("""
     SELECT wave, respondent_key, CAST(submitted_date AS DATE) AS submitted_date, q1, nps_group, is_promoter, is_passive,
-           is_detractor, q2, q3, q4, q5, q6, comment, comment_theme, in_panel, company, thread, function, job_family, grade,
-           grade_num, location, location_type, tenure_band, performance_rating, compa_band, manager_status,
-           joined_between_waves, joined_this_fy, is_interviewer, is_hiring_manager, is_exited, exited_after_wave,
-           exit_type, exit_classification, is_regrettable_exit
+           is_detractor, q2, q3, q4, q5, q6, comment, comment_theme, """ + ", ".join(SLICE_COLS) + """
     FROM t_survey""",
-    "Valid eNPS survey responses (one per respondent per wave). Anonymous: no Employee ID or name. "
-    "Segment attributes are the employee's values used for the wave (tenure band at the wave open date)."),
+    "Valid eNPS survey responses (one per respondent per wave). Anonymous: no Employee ID or name, so it cannot be "
+    "joined to HRMS or hiring data; every slicing attribute is precomputed on the row. tenure_band is at the wave open "
+    "date; manager_status is a cohort label (same in both waves); other attributes are the current HRMS values."),
 "v_invited": ("SELECT * FROM t_invited",
     "Invited population: one row per employee active on a wave's open date (the response-rate denominator). "
     "Same segment column names as v_survey so the same filters apply. No ID or name."),
@@ -209,8 +225,11 @@ COMMENTS = {
 "q6": "Q6 'I can see a clear growth path for myself at Porter' 1-5. Favourable = 4-5",
 "comment": "Optional free-text comment (blank if none)",
 "comment_theme": "Comment theme: Manager, Pay, Growth, Workload, Onboarding, Positive (blank if no comment)",
-"in_panel": "Respondent gave a valid response in BOTH waves (panel view)",
-"exited_after_wave": "Respondent exited after this wave closed (for April: exited by 31-Oct-2026)",
+"invited_both_waves": "Employee was active on both wave open dates (invited to April and October)",
+"responded_both_waves": "Employee gave a valid response in BOTH waves (panel)",
+"exited_after_wave": "Employee exited after this wave closed and by 31-Oct-2026",
+"exit_type_after_wave": "Voluntary / Involuntary if exited after this wave, else blank",
+"regrettable_after_wave": "Exited after this wave and tagged Regrettable",
 "responded": "Invited employee gave a valid response in this wave",
 # employees
 "employee_id": "Employee ID (EMP + 5 digits)",

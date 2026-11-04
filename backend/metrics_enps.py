@@ -13,12 +13,13 @@ Driver scores Q2-Q6: mean and % favourable (4-5).
 """
 from __future__ import annotations
 
-from backend.sql_common import ALL, MIN_N, Where, ident, merge
+from backend.sql_common import ALL, LOW_RESPONSE_PCT, MIN_N, Where, ident, merge
 
 SEGMENT_DIMS = {
     "thread": "Thread", "function": "Function", "job_family": "Job family", "grade": "Grade", "location": "Location",
     "location_type": "Location type", "company": "Company", "tenure_band": "Tenure band",
     "performance_rating": "Performance rating", "compa_band": "Compa band", "manager_status": "Manager status",
+    "joined_this_fy": "Joined this FY", "is_interviewer": "Interviewer", "is_hiring_manager": "Hiring manager",
 }
 DRIVERS = {"q2": "Manager feedback", "q3": "Fair pay", "q4": "Workload", "q5": "Onboarding & tools", "q6": "Growth path"}
 ORDER = {
@@ -55,7 +56,8 @@ SELECT inv.wave,
        {_sup('coalesce(sv.n, 0)', 'round(100.0 * sv.pa, 1)')} AS pct_passives,
        {_sup('coalesce(sv.n, 0)', 'round(100.0 * sv.d, 1)')} AS pct_detractors,
        {_sup('coalesce(sv.n, 0)', 'round(100.0 * (sv.p - sv.d), 1)')} AS enps,
-       coalesce(sv.n, 0) < {MIN_N} AS suppressed
+       coalesce(sv.n, 0) < {MIN_N} AS suppressed,
+       100.0 * coalesce(sv.n, 0) / inv.invited < {LOW_RESPONSE_PCT} AS low_response
 FROM inv LEFT JOIN sv USING (wave)
 ORDER BY CASE inv.wave WHEN 'Apr' THEN 1 ELSE 2 END"""
     return sql, dict(p)
@@ -87,7 +89,7 @@ def panel(w: Where = ALL):
     """Respondents valid in BOTH waves: eNPS each wave on the same people, and per-person Q1 movement."""
     f, p = w
     sql = f"""
-WITH s AS (SELECT * FROM v_survey WHERE {f} AND in_panel),
+WITH s AS (SELECT * FROM v_survey WHERE {f} AND responded_both_waves),
      per AS (SELECT respondent_key,
                     max(q1) FILTER (WHERE wave = 'Apr') AS q1_apr, max(q1) FILTER (WHERE wave = 'Oct') AS q1_oct,
                     max(is_promoter) FILTER (WHERE wave = 'Apr') - max(is_detractor) FILTER (WHERE wave = 'Apr') AS s_apr,
@@ -133,7 +135,9 @@ SELECT inv.segment,
        CASE WHEN coalesce(sv.n_apr, 0) < {MIN_N} OR coalesce(sv.n_oct, 0) < {MIN_N} THEN NULL
             ELSE round(sv.e_oct - sv.e_apr, 1) END AS enps_change,
        coalesce(sv.n_apr, 0) < {MIN_N} AS suppressed_apr,
-       coalesce(sv.n_oct, 0) < {MIN_N} AS suppressed_oct
+       coalesce(sv.n_oct, 0) < {MIN_N} AS suppressed_oct,
+       coalesce(100.0 * coalesce(sv.n_apr, 0) / nullif(inv.invited_apr, 0) < {LOW_RESPONSE_PCT}, false) AS low_response_apr,
+       coalesce(100.0 * coalesce(sv.n_oct, 0) / nullif(inv.invited_oct, 0) < {LOW_RESPONSE_PCT}, false) AS low_response_oct
 FROM inv LEFT JOIN sv USING (segment)
 ORDER BY inv.sort_key, inv.segment"""
     return sql, dict(p)
@@ -215,13 +219,43 @@ WITH s AS (SELECT * FROM v_survey WHERE {f} AND wave = 'Apr')
 SELECT nps_group, count(*) AS n,
        {_sup('count(*)', 'sum(exited_after_wave::INT)')} AS exited,
        {_sup('count(*)', 'round(100.0 * avg(exited_after_wave::INT), 1)')} AS pct_exited,
-       {_sup('count(*)', "round(100.0 * avg((exited_after_wave AND exit_type = 'Voluntary')::INT), 1)")} AS pct_voluntary_exit,
-       {_sup('count(*)', 'round(100.0 * avg((exited_after_wave AND is_regrettable_exit)::INT), 1)')} AS pct_regrettable_exit,
+       {_sup('count(*)', "round(100.0 * avg((exit_type_after_wave = 'Voluntary')::INT), 1)")} AS pct_voluntary_exit,
+       {_sup('count(*)', 'round(100.0 * avg(regrettable_after_wave::INT), 1)')} AS pct_regrettable_exit,
        count(*) < {MIN_N} AS suppressed
 FROM s GROUP BY nps_group
 ORDER BY CASE nps_group WHEN 'Detractor' THEN 1 WHEN 'Passive' THEN 2 ELSE 3 END"""
     return sql, dict(p)
 
 
+def non_response_bias(dim: str | None = "thread", w: Where = ALL):
+    """Non-response bias check. Panel-eligible people only (invited to both waves AND answered in April):
+    their APRIL eNPS, split by whether they also answered in October. If October non-respondents were less
+    positive in April than October respondents, the October eNPS is likely flattered by who chose to answer."""
+    seg = "'All'" if dim is None else ident(dim, SEGMENT_DIMS)
+    order = None if dim is None else ORDER.get(dim, dim)
+    f, p = w
+    e_resp = "100.0 * (avg(is_promoter) FILTER (WHERE responded_both_waves) - avg(is_detractor) FILTER (WHERE responded_both_waves))"
+    e_non = "100.0 * (avg(is_promoter) FILTER (WHERE NOT responded_both_waves) - avg(is_detractor) FILTER (WHERE NOT responded_both_waves))"
+    n_resp = "count(*) FILTER (WHERE responded_both_waves)"
+    n_non = "count(*) FILTER (WHERE NOT responded_both_waves)"
+    sql = f"""
+WITH s AS (SELECT * FROM v_survey WHERE {f} AND wave = 'Apr' AND invited_both_waves)
+SELECT {seg} AS segment,
+       count(*) AS n_eligible,
+       {n_resp} AS n_oct_respondents,
+       {n_non} AS n_oct_nonrespondents,
+       round(100.0 * {n_resp} / count(*), 1) AS oct_response_rate_pct,
+       {_sup(n_resp, f'round({e_resp}, 1)')} AS apr_enps_oct_respondents,
+       {_sup(n_non, f'round({e_non}, 1)')} AS apr_enps_oct_nonrespondents,
+       CASE WHEN {n_resp} < {MIN_N} OR {n_non} < {MIN_N} THEN NULL
+            ELSE round(({e_non}) - ({e_resp}), 1) END AS gap_nonresp_minus_resp,
+       {n_resp} < {MIN_N} OR {n_non} < {MIN_N} AS suppressed,
+       100.0 * {n_resp} / count(*) < {LOW_RESPONSE_PCT} AS low_response
+FROM s GROUP BY {seg}
+{"" if dim is None else f"ORDER BY min({order}), {seg}"}"""
+    return sql, dict(p)
+
+
 ALL_METRICS = {"kpis": kpis, "by_wave": by_wave, "panel": panel, "drivers": drivers,
-               "driver_importance": driver_importance, "themes": themes, "respondents_who_exited": respondents_who_exited}
+               "driver_importance": driver_importance, "themes": themes, "respondents_who_exited": respondents_who_exited,
+               "non_response_bias": non_response_bias}

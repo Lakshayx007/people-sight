@@ -12,6 +12,7 @@ from __future__ import annotations
 Where = tuple[str, dict]
 ALL: Where = ("TRUE", {})
 MIN_N = 5            # small-n suppression threshold for survey segments (Hard rule 4)
+LOW_RESPONSE_PCT = 50  # segments below this response rate get low_response = true (UI badge "Low response, read with caution")
 AS_OF = "2026-10-31"
 FY_MONTHS = ["2026-04", "2026-05", "2026-06", "2026-07", "2026-08", "2026-09", "2026-10"]
 

@@ -158,7 +158,11 @@ def test_source_and_recruiters_add_up(q, rec):
     r = q(H.recruiters)
     assert r.reqs.sum() == len(rec["req"]) and len(r) == 8
     rhea = r.set_index("recruiter").loc["Rhea Kapoor"]
-    assert rhea.attainment_pct == round(100 * rhea.offers_accepted / 7 / rhea.monthly_offer_target, 1)
+    assert rhea.attainment_all_pct == round(100 * rhea.offers_accepted_all / 7 / rhea.monthly_offer_target, 1)
+    assert rhea.attainment_excl_bo_pct == round(100 * rhea.offers_accepted_excl_bo / 7 / rhea.monthly_offer_target, 1)
+    c = rec["cand"].merge(rec["req"][["req_id", "recruiter"]], on="req_id")
+    assert r.offers_accepted_all.sum() == c.is_offer_accepted.sum()
+    assert r.offers_accepted_all.sum() - r.offers_accepted_excl_bo.sum() == c.is_backed_out.sum()
 
 
 def test_ttf_grade_and_sla_lists(q, rec):
@@ -211,3 +215,75 @@ def test_invited_matches_survey(db):
 def test_db_opened_read_only(db):
     with pytest.raises(Exception):
         db.execute("CREATE TABLE x AS SELECT 1")
+
+
+
+# ── slicing attributes, non-response bias, low-response flag ─────────────────
+
+SLICE = ["company", "thread", "function", "job_family", "grade", "grade_num", "location", "location_type", "tenure_band",
+         "performance_rating", "compa_band", "manager_status", "joined_between_waves", "joined_this_fy", "is_interviewer",
+         "is_hiring_manager", "invited_both_waves", "responded_both_waves", "exited_after_wave", "exit_type_after_wave",
+         "regrettable_after_wave"]
+
+
+def test_survey_and_invited_share_slice_columns(db):
+    sc = {r[0]: r[1] for r in db.execute("DESCRIBE v_survey").fetchall()}
+    ic = {r[0]: r[1] for r in db.execute("DESCRIBE v_invited").fetchall()}
+    for c in SLICE:
+        assert c in sc and c in ic, c
+        assert sc[c] == ic[c], (c, sc[c], ic[c])
+
+
+@pytest.mark.parametrize("col", ["exited_after_wave", "regrettable_after_wave", "is_interviewer", "joined_this_fy",
+                                 "responded_both_waves", "invited_both_waves"])
+def test_slice_counts_agree(db, col):
+    """Respondents with a flag can never outnumber invitees with that flag, wave by wave."""
+    a = dict(db.execute(f"SELECT wave, count(*) FILTER (WHERE {col}) FROM v_survey GROUP BY 1").fetchall())
+    b = dict(db.execute(f"SELECT wave, count(*) FILTER (WHERE {col} AND responded) FROM v_invited GROUP BY 1").fetchall())
+    assert a == b
+
+
+def test_after_wave_columns_consistent(db):
+    bad = db.execute("""SELECT count(*) FROM v_survey WHERE (exit_type_after_wave IS NOT NULL) <> exited_after_wave
+                        OR (regrettable_after_wave AND NOT exited_after_wave)""").fetchone()[0]
+    assert bad == 0
+
+
+def test_non_response_bias_matches_pandas(q, enps):
+    e = enps["emp"]
+    v = enps["resp"][enps["resp"].is_valid]
+    both = set(e.loc[e.active_on_apr_open & e.active_on_oct_open, "employee_id"])
+    apr = v[(v.wave == "Apr") & v.employee_id.isin(both)]
+    oct_ids = set(v.loc[v.wave == "Oct", "employee_id"])
+    resp, non = apr[apr.employee_id.isin(oct_ids)], apr[~apr.employee_id.isin(oct_ids)]
+    r = q(E.non_response_bias, None).iloc[0]
+    assert r.n_eligible == len(apr) and r.n_oct_respondents == len(resp) and r.n_oct_nonrespondents == len(non)
+    assert r.apr_enps_oct_respondents == enps_pd(resp) and r.apr_enps_oct_nonrespondents == enps_pd(non)
+    t = q(E.non_response_bias, "thread")
+    assert t.n_eligible.sum() == r.n_eligible
+    assert r.n_oct_respondents == q(E.panel).iloc[0].n
+
+
+def test_non_response_suppression(q):
+    t = q(E.non_response_bias, "function")
+    small = t[(t.n_oct_respondents < MIN_N) | (t.n_oct_nonrespondents < MIN_N)]
+    assert small.gap_nonresp_minus_resp.isna().all() and small.suppressed.all()
+    assert t.loc[t.n_oct_nonrespondents < MIN_N, "apr_enps_oct_nonrespondents"].isna().all()
+
+
+@pytest.mark.parametrize("dim", ["thread", "function", "location"])
+def test_low_response_flag(q, dim):
+    s = q(E.segment, dim)
+    has = s.invited_oct > 0
+    assert (s.loc[has, "low_response_oct"] == (100.0 * s.loc[has, "n_oct"] / s.loc[has, "invited_oct"] < 50)).all()
+    bw = q(E.by_wave)
+    assert (bw.low_response == (100.0 * bw.n / bw.invited < 50)).all()
+
+
+def test_suppression_on_combination(q):
+    """Any combination of filters keeps the n<5 rule."""
+    w = ("thread = $t AND manager_status = $m AND list_contains($g, grade)",
+         {"t": "Intercity", "m": "Changed manager", "g": ["G4", "G5"]})
+    for df, ncol, vcol in [(q(E.by_wave, w), "n", "enps"), (q(E.segment, "function", w), "n_oct", "enps_oct"),
+                           (q(E.drivers, w), "n", "mean_score")]:
+        assert df.loc[df[ncol] < MIN_N, vcol].isna().all()
