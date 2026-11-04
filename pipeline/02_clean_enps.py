@@ -69,6 +69,8 @@ COMMENT_THEMES = {
     "Did not get laptop/access for two weeks after joining.": "Onboarding",
 }
 MGR_WINDOW = (pd.Timestamp("2026-04-18"), pd.Timestamp("2026-10-04"))
+MGR_CHANGED, MGR_FIRST, MGR_SAME = "Changed manager", "New joiner (first manager)", "Same manager"
+MANAGER_STATUSES = [MGR_CHANGED, MGR_FIRST, MGR_SAME]
 BAND_SET_DATE = pd.Timestamp("2026-04-01")   # band set effective on the as-of date
 
 
@@ -246,18 +248,28 @@ for w, wd in WAVES.items():
     e[f"tenure_band_{key}"] = tenure_band(e["date_of_joining"], wd["open"])
 e["tenure_band_asof"] = tenure_band(e["date_of_joining"], AS_OF)
 in_win = e["manager_effective_from"].between(*MGR_WINDOW)
-e["manager_changed_rule_raw"] = in_win
-e["manager_changed_between_waves"] = in_win & (e["manager_effective_from"] > e["date_of_joining"])
+e["manager_changed_literal"] = in_win          # backup only: literal the case brief rule, not used in charts
+changed_mgr = in_win & (e["manager_effective_from"] > e["date_of_joining"])
+first_mgr = in_win & (e["manager_effective_from"] == e["date_of_joining"])
+e["manager_status"] = np.select([changed_mgr, first_mgr], [MGR_CHANGED, MGR_FIRST], default=MGR_SAME)
 e["joined_between_waves"] = e["date_of_joining"].between(WAVES["Apr"]["open"] + pd.Timedelta(days=1), WAVES["Oct"]["open"])
-first_mgr = in_win & ~e["manager_changed_between_waves"]
-dq.log(EM, "Manager Effective From", "the case brief rule (effective 18-Apr..04-Oct) also flags people whose first manager started on their joining date",
-       int(first_mgr.sum()), "manager_changed_between_waves additionally requires Manager Effective From > Date of Joining; strict rule kept as manager_changed_rule_raw",
-       "A first manager on day one is not a manager change (PENDING user confirmation, Phase 2)")
+MGR_ASSUMPTION = ("Manager Effective From equal to joining date = first manager, not a change. Only the current "
+                  "manager is recorded, so earlier changes or multiple changes are not visible.")
+dq.log(EM, "Manager Effective From", f"manager_status: '{MGR_CHANGED}' (effective 18-Apr..04-Oct-2026 and after Date of Joining)",
+       int(changed_mgr.sum()), "manager_status = Changed manager (dashboard filter + segment dimension)", MGR_ASSUMPTION)
+dq.log(EM, "Manager Effective From", f"manager_status: '{MGR_FIRST}' (effective 18-Apr..04-Oct-2026 and equal to Date of Joining)",
+       int(first_mgr.sum()), "manager_status = New joiner (first manager)", MGR_ASSUMPTION)
+dq.log(EM, "Manager Effective From", f"manager_status: '{MGR_SAME}' (everyone else)",
+       int((e["manager_status"] == MGR_SAME).sum()), "manager_status = Same manager", MGR_ASSUMPTION)
+dq.log(EM, "Manager Effective From", "Literal the case brief rule (effective 18-Apr..04-Oct-2026), any joining date",
+       int(in_win.sum()), "Kept as manager_changed_literal (backup only, not used in charts)", MGR_ASSUMPTION)
+other_in_win = int((in_win & (e["manager_effective_from"] < e["date_of_joining"])).sum())
+dq.log(EM, "Manager Effective From", "In window but before Date of Joining", other_in_win, "Validated" if other_in_win == 0 else "Flagged")
 
 dq.step(EM, "rows out (one per employee)", len(e))
 EMP_COLS = ["employee_id", "employee_name", "company", "thread", "function", "job_family", "designation", "grade", "grade_num",
             "location", "location_type", "date_of_joining", "reporting_manager_id", "manager_effective_from",
-            "manager_changed_between_waves", "manager_changed_rule_raw", "joined_between_waves", "performance_rating",
+            "manager_status", "manager_changed_literal", "joined_between_waves", "performance_rating",
             "annual_ctc", "annual_ctc_raw", "ctc_flag", "band_mid", "compa_ratio", "compa_band",
             "employment_status", "is_exited", "date_of_exit", "exit_date_unknown", "exit_month", "exit_type",
             "exit_classification", "is_regrettable_exit", "record_updated_on", "tenure_days", "tenure_band_asof",
@@ -341,7 +353,7 @@ dq.log(RS, "Comments (optional)", f"{r['comment'].nunique()} repeated phrases", 
 
 # snapshot attributes at the wave open date
 SNAP = ["company", "thread", "function", "job_family", "grade", "grade_num", "location", "location_type",
-        "performance_rating", "compa_band", "manager_changed_between_waves", "joined_between_waves", "is_exited",
+        "performance_rating", "compa_band", "manager_status", "joined_between_waves", "is_exited",
         "exit_type", "exit_classification", "is_regrettable_exit", "date_of_exit"]
 for c in SNAP:
     r[c] = r["employee_id"].map(emp[c]) if c in emp.columns else None
@@ -377,6 +389,7 @@ print(f"dq_log rows (eNPS)       {len(dq.rows):>5}")
 print("\nReconciliation:")
 for s in dq.recon:
     print(f"  {s['sheet']:<16} {s['order']:>2}. {s['step']:<40} {s['rows']:>5}  {s['change'] if s['change'] != '' else ''}")
+print("\nmanager_status:", e["manager_status"].value_counts().to_dict(), "| literal:", int(e["manager_changed_literal"].sum()))
 print("\nCheckpoint numbers:")
 for w in ["Apr", "Oct"]:
     v = r[r.is_valid & (r.wave == w)]

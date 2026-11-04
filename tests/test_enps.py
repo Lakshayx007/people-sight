@@ -10,6 +10,7 @@ LOCATIONS = {"Bengaluru HO", "Bengaluru", "Ahmedabad", "Chennai", "Delhi NCR", "
 GRADES = {"TBA"} | {f"G{i}" for i in range(1, 11)}
 RATINGS = {"Game Changer", "High Impact Player", "Solid Performer", "Needs Improvement",
            "Below Expectations", "Not Rated - New Joiner", "Missing"}
+MANAGER_STATUSES = {"Changed manager", "New joiner (first manager)", "Same manager"}
 THEMES = {"Manager", "Pay", "Growth", "Workload", "Onboarding", "Positive"}
 
 
@@ -49,6 +50,7 @@ def test_every_valid_respondent_active_on_wave_open_date(enps, valid):
     ("performance_rating", RATINGS), ("compa_band", set(COMPA_BANDS)), ("job_family", {"Tech", "Non-Tech"}),
     ("company", {"Porter", "SmartShift Info Marketing Services Pvt Ltd"}),
     ("ctc_flag", {"ok", "missing", "corrected_monthly_x12", "out_of_band"}),
+    ("manager_status", MANAGER_STATUSES),
 ])
 def test_employee_categoricals_canonical(enps, col, allowed):
     vals = set(enps["emp"][col].dropna().unique())
@@ -60,6 +62,7 @@ def test_employee_categoricals_canonical(enps, col, allowed):
     ("wave", {"Apr", "Oct"}), ("nps_group", {"Promoter", "Passive", "Detractor"}),
     ("comment_theme", THEMES), ("tenure_band", set(TENURE_BANDS)), ("thread", THREADS),
     ("grade", GRADES), ("location", LOCATIONS), ("compa_band", set(COMPA_BANDS)),
+    ("manager_status", MANAGER_STATUSES),
 ])
 def test_survey_categoricals_canonical(valid, col, allowed):
     vals = set(valid[col].dropna().unique())
@@ -144,3 +147,16 @@ def test_status_consistent_with_exit_date(enps):
 def test_panel_flag(valid):
     p = valid[valid["in_panel"]]
     assert (p.groupby("employee_id")["wave"].nunique() == 2).all()
+
+
+def test_manager_status_rule(enps):
+    e = enps["emp"]
+    lo, hi = pd.Timestamp("2026-04-18"), pd.Timestamp("2026-10-04")
+    win = e["manager_effective_from"].between(lo, hi)
+    assert (e["manager_changed_literal"] == win).all()
+    ch = e["manager_status"] == "Changed manager"
+    nj = e["manager_status"] == "New joiner (first manager)"
+    assert (ch == (win & (e["manager_effective_from"] > e["date_of_joining"]))).all()
+    assert (nj == (win & (e["manager_effective_from"] == e["date_of_joining"]))).all()
+    assert ch.sum() + nj.sum() == win.sum()
+    assert "manager_changed_between_waves" not in e.columns
