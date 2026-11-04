@@ -158,6 +158,31 @@ ORDER BY reqs DESC"""
     return sql, merge(p, {"months": months})
 
 
+def recruiter_comparison(wr: Where = ALL, wc: Where = ALL):
+    """Fair comparison per recruiter, independent of how many reqs each was given: reqs assigned, filled %,
+    median TTF, % filled within SLA, open reqs past SLA, accepted offers per assigned req."""
+    ctes, p = _ctes(wr, wc)
+    sql = f"""
+WITH {ctes},
+     rq AS (SELECT recruiter, count(*) AS reqs_assigned, count(*) FILTER (WHERE is_open) AS open_reqs,
+                   count(*) FILTER (WHERE open_breached) AS open_past_sla
+            FROM r GROUP BY recruiter),
+     hc AS (SELECT recruiter, count(*) FILTER (WHERE is_hire) AS filled,
+                   median(req_ttf_days) FILTER (WHERE is_hire) AS median_ttf_days,
+                   round(100.0 * avg(req_sla_met::INT) FILTER (WHERE is_hire), 1) AS pct_filled_within_sla,
+                   count(*) FILTER (WHERE is_offer_accepted) AS offers_accepted
+            FROM c GROUP BY recruiter)
+SELECT t.recruiter, coalesce(rq.reqs_assigned, 0) AS reqs_assigned, coalesce(hc.filled, 0) AS filled,
+       round(100.0 * coalesce(hc.filled, 0) / nullif(rq.reqs_assigned, 0), 1) AS filled_pct,
+       hc.median_ttf_days, hc.pct_filled_within_sla,
+       coalesce(rq.open_reqs, 0) AS open_reqs, coalesce(rq.open_past_sla, 0) AS open_past_sla,
+       coalesce(hc.offers_accepted, 0) AS offers_accepted,
+       round(coalesce(hc.offers_accepted, 0) / nullif(rq.reqs_assigned, 0), 2) AS accepted_per_assigned_req
+FROM v_recruiters t LEFT JOIN rq USING (recruiter) LEFT JOIN hc USING (recruiter)
+ORDER BY reqs_assigned DESC"""
+    return sql, p
+
+
 def interviewers(wr: Where = ALL, wc: Where = ALL, top: int = 15, min_n: int = 5):
     """Slowest R1 interviewers by median feedback turnaround (min_n interviews with feedback), names from People_Directory."""
     sql = f"""
@@ -286,7 +311,7 @@ FROM r"""
 
 
 ALL_METRICS = {"kpis": kpis, "monthly": monthly, "funnel": funnel, "stage_time": stage_time, "source": source,
-               "recruiters": recruiters, "interviewers": interviewers, "ttf_by_grade": ttf_by_grade,
+               "recruiters": recruiters, "recruiter_comparison": recruiter_comparison, "interviewers": interviewers, "ttf_by_grade": ttf_by_grade,
                "open_aging_buckets": open_aging_buckets, "offers": offers, "offers_summary": offers_summary,
                "sla_mismatch": sla_mismatch, "sla_mismatch_list": sla_mismatch_list, "backfill": backfill,
                "open_aging": open_aging}

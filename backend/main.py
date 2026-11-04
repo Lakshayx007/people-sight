@@ -170,7 +170,7 @@ def _hiring_route(path: str, fn: Callable, base: str, extra: str = ""):
 for _path, _fn, _base, _extra in [
     ("kpis", H.kpis, "req", ""), ("monthly", H.monthly, "req", ""), ("funnel", H.funnel, "cand", ""),
     ("stage-time", H.stage_time, "cand", " AND NOT stage_dates_invalid"), ("source", H.source, "cand", ""),
-    ("recruiters", H.recruiters, "req", ""), ("interviewers", H.interviewers, "cand", " AND r1_feedback_days IS NOT NULL"),
+    ("recruiters", H.recruiters, "req", ""), ("recruiter-comparison", H.recruiter_comparison, "req", ""), ("interviewers", H.interviewers, "cand", " AND r1_feedback_days IS NOT NULL"),
     ("ttf-by-grade", H.ttf_by_grade, "req", ""), ("open-aging", H.open_aging, "req", ""),
     ("open-aging-buckets", H.open_aging_buckets, "req", ""),
     ("offers", H.offers, "cand", " AND (is_offer_accepted OR is_offer_declined)"),

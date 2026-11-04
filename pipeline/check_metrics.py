@@ -83,7 +83,13 @@ tg = add("TTF by grade", H.ttf_by_grade)
 add("Source effectiveness", H.source)
 rc = add("Recruiter load vs target", H.recruiters,
          note="two attainment versions over Apr–Oct 2026 (7 months): **_all** = all accepted offers incl. candidates who later "
-              "backed out; **_excl_bo** = accepted offers excluding backed-out candidates. Attainment = accepted per month ÷ monthly target")
+              "backed out; **_excl_bo** = accepted offers excluding backed-out candidates. Attainment = accepted per month ÷ monthly target. "
+              "Note: attainment depends on how many reqs a recruiter is given (see the fair comparison below)")
+rcc = add("Recruiter fair comparison (use this to compare recruiters)", H.recruiter_comparison,
+          note="per-req measures that do not depend on how many reqs a recruiter was given: filled %, median TTF, % filled "
+               "within SLA, open past SLA, accepted offers per assigned req. **Attainment (above) depends on how many reqs a "
+               "recruiter is given** — a recruiter with few reqs cannot reach a fixed monthly offer target — so it measures load as "
+               "much as performance")
 iv = add("Slowest R1 interviewers (min 5 interviews with feedback)", H.interviewers)
 ofr = add("Offers by offered / expected CTC ratio", H.offers)
 add("Accepted vs declined offers", H.offers_summary)
@@ -145,6 +151,9 @@ signals = [
     f"G3 {g.loc['G3', 'median_ttf_days']:g} d vs 45, {g.loc['G3', 'pct_within_sla']}% within (n = {int(g.loc['G3', 'filled'])})",
     "- Slow R1 feedback: " + "; ".join(f"{r.interviewer} median {r.median_feedback_days:g} d (n = {int(r.n)} interviews)" for r in slow.itertuples())
     + f"; the other {len(others)} ranked interviewers have medians ≤ 2 d",
+    "- Recruiters, fair comparison (per assigned req): " + "; ".join(
+        f"{r.recruiter} {r.filled_pct}% filled, median TTF {r.median_ttf_days:g} d, {r.pct_filled_within_sla}% within SLA, "
+        f"{r.accepted_per_assigned_req} accepted / req (n = {int(r.reqs_assigned)} reqs)" for r in rcc.itertuples()),
     f"- Offers below 0.90× expected CTC: **{o.loc['<0.90', 'decline_rate_pct']}%** declined ({int(o.loc['<0.90', 'declined'])} of n = {int(o.loc['<0.90', 'offers'])}) vs "
     f"{o.loc['0.90-0.99', 'decline_rate_pct']}% at 0.90–0.99 ({int(o.loc['0.90-0.99', 'declined'])} of n = {int(o.loc['0.90-0.99', 'offers'])}) and "
     f"{o.loc['1.00-1.09', 'decline_rate_pct']}% at 1.00–1.09 ({int(o.loc['1.00-1.09', 'declined'])} of n = {int(o.loc['1.00-1.09', 'offers'])})",

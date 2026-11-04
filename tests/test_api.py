@@ -10,7 +10,7 @@ from backend.sql_common import MIN_N
 ENPS_EP = ["kpis", "by-wave", "panel", "segment?dim=thread", "segment?dim=manager_status", "drivers",
            "driver-importance", "heatmap?row=thread&col=function", "themes", "respondents-who-exited",
            "non-response-bias?dim=thread"]
-HIRING_EP = ["kpis", "monthly", "funnel", "stage-time", "source", "recruiters", "interviewers", "ttf-by-grade",
+HIRING_EP = ["kpis", "monthly", "funnel", "stage-time", "source", "recruiters", "recruiter-comparison", "interviewers", "ttf-by-grade",
              "open-aging", "open-aging-buckets", "offers", "offers-summary", "sla-mismatch", "sla-mismatch-list", "backfill"]
 SCORE_COLS = {"enps", "enps_apr", "enps_oct", "enps_change", "pct_promoters", "pct_passives", "pct_detractors",
               "mean_score", "pct_favourable", "corr_with_q1", "comments", "pct_of_respondents", "pct_exited",
@@ -135,6 +135,9 @@ def test_hiring_reconciles_under_filters(api, options):
         assert sum(r["filled"] for r in get("ttf-by-grade")["data"]) == k["filled_reqs"], f
         assert sum(r["hires"] for r in get("source")["data"]) == k["filled_reqs"], f
         assert sum(r["filled"] for r in get("recruiters")["data"]) == k["filled_reqs"], f
+        rc = get("recruiter-comparison")["data"]
+        assert sum(r["filled"] for r in rc) == k["filled_reqs"] and sum(r["reqs_assigned"] for r in rc) == k["reqs_raised"], f
+        assert sum(r["open_past_sla"] for r in rc) == k["open_past_sla"], f
         assert sum(r["reqs_raised"] for r in get("monthly")["data"]) == k["reqs_raised"] == get("kpis")["n"], f
         assert sum(r["open_reqs"] for r in get("open-aging-buckets")["data"]) == k["open_reqs"], f
 

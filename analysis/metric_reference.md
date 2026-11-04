@@ -25,6 +25,7 @@ Survey groups with fewer than 5 respondents show — (suppressed). Percentages a
 - April respondents who later exited: detractors **31.8%** (78 of n = 245), passives 12.1% (34 of n = 281), promoters 5.6% (19 of n = 340)
 - TTF vs SLA by grade: G6 median 83 d vs 60-day SLA, 38.5% within (n = 13 filled); G7 70.5 d, 37.5% within (n = 8); G3 38 d vs 45, 58.5% within (n = 65)
 - Slow R1 feedback: Deepak Malhotra median 12 d (n = 13 interviews); Pranav Verma median 10 d (n = 11 interviews); the other 13 ranked interviewers have medians ≤ 2 d
+- Recruiters, fair comparison (per assigned req): Rhea Kapoor 81.1% filled, median TTF 23 d, 76.7% within SLA, 0.85 accepted / req (n = 106 reqs); Vikram Nair 72.7% filled, median TTF 26 d, 87.5% within SLA, 0.8 accepted / req (n = 44 reqs); Tanvi Joshi 82.9% filled, median TTF 25 d, 75.9% within SLA, 0.89 accepted / req (n = 35 reqs); Karan Bhat 84.4% filled, median TTF 20 d, 88.9% within SLA, 0.84 accepted / req (n = 32 reqs); Imran Sheikh 63.3% filled, median TTF 27 d, 68.4% within SLA, 0.7 accepted / req (n = 30 reqs); Divya Menon 71.4% filled, median TTF 52 d, 45.0% within SLA, 0.75 accepted / req (n = 28 reqs); Arnav Gupta 86.7% filled, median TTF 17 d, 84.6% within SLA, 0.93 accepted / req (n = 15 reqs); Meghna Rao 50.0% filled, median TTF 49 d, 40.0% within SLA, 0.6 accepted / req (n = 10 reqs)
 - Offers below 0.90× expected CTC: **42.7%** declined (32 of n = 75) vs 7.7% at 0.90–0.99 (11 of n = 142) and 10.1% at 1.00–1.09 (8 of n = 79)
 
 ## Employee Sentiment (eNPS)
@@ -419,7 +420,7 @@ Survey groups with fewer than 5 respondents show — (suppressed). Percentages a
 
 ### Recruiter load vs target
 
-`metrics_hiring.recruiters()` — two attainment versions over Apr–Oct 2026 (7 months): **_all** = all accepted offers incl. candidates who later backed out; **_excl_bo** = accepted offers excluding backed-out candidates. Attainment = accepted per month ÷ monthly target
+`metrics_hiring.recruiters()` — two attainment versions over Apr–Oct 2026 (7 months): **_all** = all accepted offers incl. candidates who later backed out; **_excl_bo** = accepted offers excluding backed-out candidates. Attainment = accepted per month ÷ monthly target. Note: attainment depends on how many reqs a recruiter is given (see the fair comparison below)
 
 | recruiter | recruiter_id | reqs | pct_of_reqs | open_reqs | open_past_sla | filled | median_ttf_days | pct_within_sla | monthly_offer_target | offers_accepted_all | accepted_per_month_all | attainment_all_pct | offers_accepted_excl_bo | accepted_per_month_excl_bo | attainment_excl_bo_pct |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
@@ -431,6 +432,21 @@ Survey groups with fewer than 5 respondents show — (suppressed). Percentages a
 | Divya Menon | TA07 | 28 | 9.3 | 7 | 4 | 20 | 52 | 45 | 7 | 21 | 3 | 42.9 | 20 | 2.86 | 40.8 |
 | Arnav Gupta | TA08 | 15 | 5 | 0 | 0 | 13 | 17 | 84.6 | 7 | 14 | 2 | 28.6 | 13 | 1.86 | 26.5 |
 | Meghna Rao | TA05 | 10 | 3.3 | 4 | 2 | 5 | 49 | 40 | 10 | 6 | 0.86 | 8.6 | 5 | 0.71 | 7.1 |
+
+### Recruiter fair comparison (use this to compare recruiters)
+
+`metrics_hiring.recruiter_comparison()` — per-req measures that do not depend on how many reqs a recruiter was given: filled %, median TTF, % filled within SLA, open past SLA, accepted offers per assigned req. **Attainment (above) depends on how many reqs a recruiter is given** — a recruiter with few reqs cannot reach a fixed monthly offer target — so it measures load as much as performance
+
+| recruiter | reqs_assigned | filled | filled_pct | median_ttf_days | pct_filled_within_sla | open_reqs | open_past_sla | offers_accepted | accepted_per_assigned_req |
+|---|---|---|---|---|---|---|---|---|---|
+| Rhea Kapoor | 106 | 86 | 81.1 | 23 | 76.7 | 20 | 14 | 90 | 0.85 |
+| Vikram Nair | 44 | 32 | 72.7 | 26 | 87.5 | 11 | 5 | 35 | 0.8 |
+| Tanvi Joshi | 35 | 29 | 82.9 | 25 | 75.9 | 5 | 3 | 31 | 0.89 |
+| Karan Bhat | 32 | 27 | 84.4 | 20 | 88.9 | 4 | 3 | 27 | 0.84 |
+| Imran Sheikh | 30 | 19 | 63.3 | 27 | 68.4 | 10 | 6 | 21 | 0.7 |
+| Divya Menon | 28 | 20 | 71.4 | 52 | 45 | 7 | 4 | 21 | 0.75 |
+| Arnav Gupta | 15 | 13 | 86.7 | 17 | 84.6 | 0 | 0 | 14 | 0.93 |
+| Meghna Rao | 10 | 5 | 50 | 49 | 40 | 4 | 2 | 6 | 0.6 |
 
 ### Slowest R1 interviewers (min 5 interviews with feedback)
 
