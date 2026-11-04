@@ -11,10 +11,13 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 @pytest.fixture(scope="module")
-def ins():
+def ins(tmp_path_factory):
+    """Runs the script with outputs redirected to a temp folder, so tests never rewrite the committed files."""
     spec = importlib.util.spec_from_file_location("insights05", ROOT / "pipeline" / "05_insights.py")
     mod = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(mod)
+    out = tmp_path_factory.mktemp("analysis")
+    mod.OUT, mod.CHARTS = out, out / "charts"
     mod.main()
     return mod
 
@@ -37,8 +40,8 @@ def test_deck_top8_ranked(ins):
     assert len(ins.deck) == ins.TOP_N == 8
     assert all(not ins.BYID[d]["verdict"].startswith("Not supported") for d in ins.deck)
     for d in ins.deck:
-        assert (ROOT / "analysis" / "charts" / f"{d}.png").exists()
-    assert len(list((ROOT / "analysis" / "charts").glob("F*.png"))) == 8
+        assert (ins.CHARTS / f"{d}.png").exists()
+    assert len(list(ins.CHARTS.glob("F*.png"))) == 8
 
 
 def test_numbers_match_dashboard_metrics(ins):
@@ -72,7 +75,7 @@ def test_no_names_in_sentiment_findings(ins):
 
 
 def test_dq_note_counts_from_log(ins):
-    note = (ROOT / "analysis" / "dq_note.md").read_text(encoding="utf-8")
+    note = (ins.OUT / "dq_note.md").read_text(encoding="utf-8")
     log = pd.read_csv(ROOT / "data" / "clean" / "dq_log.csv")
     for issue_start, label in [("No matching requisition", "Orphan candidates"),
                                ("Exited with missing exit date", "Exited without an exit date"),
@@ -84,7 +87,9 @@ def test_dq_note_counts_from_log(ins):
 
 
 def test_reproducible(ins):
-    p = ROOT / "analysis" / "insights.md"
+    p = ins.OUT / "insights.md"
     h1 = hashlib.sha256(p.read_bytes()).hexdigest()
     ins.main()
     assert hashlib.sha256(p.read_bytes()).hexdigest() == h1
+    # the committed insights.md is what the script produces
+    assert p.read_text(encoding="utf-8") == (ROOT / "analysis" / "insights.md").read_text(encoding="utf-8")
