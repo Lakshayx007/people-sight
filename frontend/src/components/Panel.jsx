@@ -1,8 +1,10 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Code2, Maximize2 } from 'lucide-react';
 import ChartModal from './ChartModal';
 import SqlBlock from './SqlBlock';
 import { NBadge } from './Badges';
+import ChartInsight from './ChartInsight';
+import { api, loadAskStatus } from '../lib/api';
 
 export const CHART_H = 300;
 
@@ -13,11 +15,24 @@ export const CHART_H = 300;
  */
 export default function Panel({
   title, subtitle, n, nLabel, sql, loading, error, empty, badges, actions, children,
-  className = '', height = CHART_H, footer,
+  className = '', height = CHART_H, footer, insightRows,
 }) {
   const [showSql, setShowSql] = useState(false);
   const [zoom, setZoom] = useState(false);
   const render = (h) => (typeof children === 'function' ? children(h) : children);
+  const [aiOn, setAiOn] = useState(false);
+  const [insight, setInsight] = useState({ text: null, loading: false, key: null });
+  useEffect(() => { if (insightRows) loadAskStatus().then((st) => setAiOn(!!st.available)); }, [insightRows]);
+  const rowsKey = insightRows ? JSON.stringify(insightRows).length + ':' + (sql || '').length : null;
+  const explain = async () => {
+    setInsight({ text: null, loading: true, key: rowsKey });
+    try {
+      const r = await api.post('/chart-insight', { title, rows: (insightRows || []).slice(0, 40) }, { timeout: 45000 });
+      setInsight({ text: r.data.data[0].insight, loading: false, key: rowsKey });
+    } catch {
+      setInsight({ text: 'Could not get a summary right now.', loading: false, key: rowsKey });
+    }
+  };
 
   let body;
   if (error) body = <State text={`Could not load: ${error}`} tone="error" />;
@@ -56,6 +71,9 @@ export default function Panel({
         )}
       </div>
       {footer}
+      {aiOn && insightRows?.length > 0 && !loading && !error && (
+        <ChartInsight insight={insight.key === rowsKey ? insight.text : null} loading={insight.loading && insight.key === rowsKey} onGenerate={explain} />
+      )}
       {showSql && <SqlBlock sql={sql} />}
       <ChartModal isOpen={zoom} onClose={() => setZoom(false)} title={title} subtitle={subtitle}>
         {!error && !empty && render(Math.min(560, window.innerHeight * 0.65))}

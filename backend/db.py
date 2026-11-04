@@ -75,3 +75,9 @@ def annotate(sql: str, params: dict) -> str:
     """Prefix the SQL with its parameter values as a comment, so the text shown in 'Show SQL' is exactly what ran."""
     head = f"-- params: {json.dumps(params, default=str)}\n" if params else ""
     return head + sql.strip()
+
+
+def query_rows(sql: str, params: dict | None = None) -> list[tuple]:
+    """Plain tuples (for internal lookups such as the Ask-the-Data schema)."""
+    with cursor() as cur:
+        return cur.execute(sql, params or {}).fetchall()

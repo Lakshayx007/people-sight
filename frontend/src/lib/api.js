@@ -44,3 +44,12 @@ export function loadFilterOptions() {
   }
   return optionsPromise;
 }
+
+let askStatusPromise = null;
+/** Ask-the-Data / Groq availability, fetched once: { available, model, suggestions }. */
+export function loadAskStatus() {
+  if (!askStatusPromise) {
+    askStatusPromise = api.get('/ask/status').then((r) => r.data.data[0]).catch(() => ({ available: false }));
+  }
+  return askStatusPromise;
+}

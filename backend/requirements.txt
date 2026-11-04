@@ -9,6 +9,7 @@ fastapi>=0.110
 uvicorn[standard]>=0.29
 python-dotenv>=1.0
 groq>=0.9
+sqlglot>=25
 # Tests
 pytest>=8
 httpx>=0.27

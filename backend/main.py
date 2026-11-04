@@ -23,7 +23,7 @@ from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
-from backend import db
+from backend import ai_service, ask, db
 from backend import metrics_enps as E
 from backend import metrics_hiring as H
 from backend.filters import FilterError, build_where
@@ -179,6 +179,39 @@ for _path, _fn, _base, _extra in [
     ("backfill", H.backfill, "req", ""),
 ]:
     _hiring_route(_path, _fn, _base, _extra)
+
+
+# ── Ask the Data ─────────────────────────────────────────────────────────────
+
+class AskBody(BaseModel):
+    question: str = Field(..., max_length=2000)
+    dataset: str = Field("all", pattern="^(enps|hiring|all)$")
+    filters: dict[str, Any] = Field(default_factory=dict)
+    apply_filters: bool = False
+
+
+@app.post("/api/ask")
+def ask_the_data(body: AskBody):
+    """Plain English -> one validated read-only SELECT on the v_* views. Superset of the {data, sql, n} contract:
+    data = result rows, plus columns, chart_spec, explanation, and refused / unavailable / error with a message."""
+    return ask.answer(body.question, body.dataset, body.filters, body.apply_filters)
+
+
+@app.get("/api/ask/status")
+def ask_status():
+    return {"data": [{"available": ai_service.available(), "model": ai_service.model_name(),
+                      "suggestions": ask.SUGGESTIONS}], "sql": "", "n": 1}
+
+
+class InsightBody(BaseModel):
+    title: str = Field(..., max_length=200)
+    rows: list[dict[str, Any]] = Field(default_factory=list)
+
+
+@app.post("/api/chart-insight")
+def chart_insight(body: InsightBody):
+    """Two-sentence blurb written by Groq only from the rows the panel already shows (Hard rule 9)."""
+    return {"data": [{"insight": ai_service.chart_blurb(body.title, body.rows)}], "sql": "", "n": len(body.rows)}
 
 
 # ── filter options, data quality, health ─────────────────────────────────────

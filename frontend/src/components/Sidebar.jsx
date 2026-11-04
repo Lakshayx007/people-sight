@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom';
-import { Briefcase, ClipboardCheck, Moon, Smile, Sun, Users, X } from 'lucide-react';
+import { Briefcase, ClipboardCheck, Moon, Smile, Sparkles, Sun, Users, X } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
 
 // Adapted from Onco-Sight's Sidebar: same collapsible layout and mobile overlay, new navigation.
@@ -9,7 +9,7 @@ const NAV = [
   { name: 'Data quality', icon: ClipboardCheck, path: '/data-quality' },
 ];
 
-export default function Sidebar({ open, onClose }) {
+export default function Sidebar({ open, onClose, onAsk }) {
   const { theme, toggle } = useTheme();
   return (
     <>
@@ -48,6 +48,10 @@ export default function Sidebar({ open, onClose }) {
               </NavLink>
             ))}
           </div>
+          <button onClick={onAsk}
+            className="mt-4 flex w-full items-center gap-3 rounded-lg bg-accent px-3 py-2.5 text-sm font-medium text-white shadow-sm hover:opacity-90">
+            <Sparkles className="h-4 w-4" /> Ask the data
+          </button>
         </nav>
 
         <div className="space-y-3 border-t border-border p-4">
