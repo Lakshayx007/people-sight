@@ -137,3 +137,60 @@ def job_family(function) -> str:
 def active_on(doj: pd.Series, exit_date: pd.Series, d: pd.Timestamp) -> pd.Series:
     """Active on date D = joined on/before D and (no exit or exit on/after D)."""
     return (doj <= d) & (exit_date.isna() | (exit_date >= d))
+
+
+# ── data-quality log + reconciliation (shared by 02 and 03) ──────────────────
+DQ_COLUMNS = ["dataset", "sheet", "column", "issue", "rows_affected", "treatment", "assumption"]
+RECON_COLUMNS = ["dataset", "sheet", "step", "order", "rows", "change", "note"]
+
+
+class DQLog:
+    """Collects cleaning decisions for one dataset, then writes them into
+    data/clean/dq_log.csv and reconciliation.csv, replacing only that dataset's
+    earlier rows so each script can be re-run on its own."""
+
+    def __init__(self, dataset: str):
+        self.dataset = dataset
+        self.rows: list[dict] = []
+        self.recon: list[dict] = []
+
+    def log(self, sheet, column, issue, rows_affected, treatment, assumption=""):
+        self.rows.append(dict(dataset=self.dataset, sheet=sheet, column=column, issue=issue,
+                              rows_affected=int(rows_affected), treatment=treatment, assumption=assumption))
+
+    def step(self, sheet, step, rows, note=""):
+        prev = [r for r in self.recon if r["sheet"] == sheet]
+        change = "" if not prev else int(rows) - prev[-1]["rows"]
+        self.recon.append(dict(dataset=self.dataset, sheet=sheet, step=step, order=len(prev) + 1,
+                               rows=int(rows), change=change, note=note))
+
+    def _merge(self, path: Path, new: list[dict], cols: list[str]):
+        old = pd.read_csv(path) if path.exists() else pd.DataFrame(columns=cols)
+        old = old[old["dataset"] != self.dataset]
+        out = pd.concat([old, pd.DataFrame(new, columns=cols)], ignore_index=True)
+        out.to_csv(path, index=False)
+        return out
+
+    def write(self):
+        CLEAN_DIR.mkdir(parents=True, exist_ok=True)
+        self._merge(CLEAN_DIR / "dq_log.csv", self.rows, DQ_COLUMNS)
+        self._merge(CLEAN_DIR / "reconciliation.csv", self.recon, RECON_COLUMNS)
+
+
+def tenure_band(doj: pd.Series, on: pd.Timestamp) -> pd.Series:
+    """Tenure band at date `on`: <6m, 6-12m, 1-2y, 2-4y, 4y+ (calendar months/years)."""
+    out = pd.Series(pd.NA, index=doj.index, dtype="object")
+    ok = doj.notna() & (doj <= on)
+    edges = [(on - pd.DateOffset(months=6), "<6m"), (on - pd.DateOffset(years=1), "6-12m"),
+             (on - pd.DateOffset(years=2), "1-2y"), (on - pd.DateOffset(years=4), "2-4y")]
+    rest = ok.copy()
+    for edge, label in edges:
+        hit = rest & (doj > edge)
+        out[hit] = label
+        rest &= ~hit
+    out[rest] = "4y+"
+    return out
+
+
+TENURE_BANDS = ["<6m", "6-12m", "1-2y", "2-4y", "4y+"]
+COMPA_BANDS = ["Below", "At", "Above", "Unknown"]
