@@ -32,13 +32,27 @@ and are skipped otherwise.
 | Path | What |
 |---|---|
 | `data/raw/` | The two workbooks as received — never modified |
-| `pipeline/` | `01_profile.py` → `analysis/profile.md`; `02_clean_enps.py`, `03_clean_recruitment.py` → `data/clean/*.parquet` + `dq_log.csv`; `04_build_db.py` → `data/people.duckdb`; `check_metrics.py` → `analysis/metric_reference.md`; `05_insights.py` → `analysis/insights.md`, charts, DQ note |
+| `pipeline/` | `01_profile.py` → `analysis/profile.md`; `02_clean_enps.py`, `03_clean_recruitment.py` → `data/clean/*.parquet` + `dq_log.csv`; `04_build_db.py` → `data/people.duckdb`; `check_metrics.py` → `analysis/metric_reference.md`; `05_insights.py` → `analysis/insights.md`, charts, DQ note; `06_build_deck.py` → `analysis/Porter_People_Insights.pptx` + `deck_number_trace.md` |
 | `backend/` | FastAPI: `filters.py` (the only filter → SQL code), `metrics_enps.py` / `metrics_hiring.py` (one function per metric, returns SQL), `db.py` (read-only DuckDB), `ask.py` + `ai_service.py` (Ask the Data) |
 | `frontend/` | React 19 + Vite + Tailwind v4 + ECharts: pages Sentiment, Hiring, Data Quality; Ask panel |
 | `tests/` | pytest suites (see above) |
-| `analysis/` | profile, metric reference, hypotheses, insights, deck charts, DQ note, Ask-the-Data test log, screenshots |
+| `analysis/` | profile, metric reference, hypotheses, insights, charts, insight deck and its number trace, DQ note, Ask-the-Data test log, screenshots |
 | `scripts/` | screenshots, UI checks, Ask-the-Data evaluation, submission pack builder |
+| `submission/` | `01_Dashboards.pdf` (links, how to use, full-page screenshots), `02_Insight_Deck.pptx` / `.pdf` (12 slides for the CHRO and TA Head), `03_Data_Quality_Note.pdf` (one page), `04_Working.zip` (code, tests, cleaning log, profile) |
 | `render.yaml`, `build.sh` | One Render web service: build = `build.sh`, start = uvicorn |
+
+## Analysis outputs
+
+Run after the database is built (`pip install -r requirements-analysis.txt` first):
+
+```bash
+python pipeline/check_metrics.py     # analysis/metric_reference.md — reference values with n
+python pipeline/05_insights.py       # hypotheses, ranked insights, counterfactuals, recommendations, charts, DQ note
+python pipeline/06_build_deck.py     # 12-slide deck; every number traced to insights.md in deck_number_trace.md
+python scripts/build_submission.py --url https://people-sight.onrender.com   # submission PDFs + working zip
+```
+
+The deck PDF is exported from the .pptx with LibreOffice (`soffice --headless --convert-to pdf`).
 
 ## Architecture
 

@@ -6,3 +6,4 @@ markdown==3.11
 playwright
 Pillow
 pypdf==6.17.0
+python-pptx==1.0.2

@@ -94,13 +94,14 @@ Before each next wave, also check thread response rates (F8) so a rise is not a 
 | Changed manager, October | -59.1 | 44 |
 | Same manager, October | +13.0 | 629 |
 | Changed manager, April (before the change) | +4.2 | 48 |
+| Same manager, April | +11.4 | 818 |
 | Same manager in Intercity, April | -1.6 | 122 |
 | Panel: mean Q1 change, Changed manager | -1.94 | 32 |
 | Panel: mean Q1 change, Same manager | -0.17 | 494 |
 | Q2 manager feedback, % favourable Oct: Changed | 0.0% | 44 |
 | Q2 manager feedback, % favourable Oct: Same | 43.1% | 629 |
 
-**Test.** Raw gap: z-test, significant (p < 0.001). Within thread × grade (5 strata, 117 respondents, 44 changed): permutation test, significant (p < 0.001). Panel per-person Q1 change, Changed vs Same: Mann-Whitney, significant (p = 0.002). Q2 in October: Mann-Whitney, significant (p < 0.001); Q2 change on the panel: significant (p < 0.001). Before the change (April), Changed vs Intercity Same manager: **NOT significant** (p = 0.67) — no gap existed beforehand.
+**Test.** Raw gap: z-test, significant (p < 0.001). Within thread × grade (5 strata, 117 respondents, 44 changed): permutation test (5,000 shuffles within strata), significant (p < 0.001). Panel per-person Q1 change, Changed vs Same: Mann-Whitney, significant (p = 0.002). Q2 in October: Mann-Whitney, significant (p < 0.001); Q2 change on the panel: significant (p < 0.001). Before the change (April), Changed vs Intercity Same manager: **NOT significant** (p = 0.67) — no gap existed beforehand.
 
 **Caveat.** All changed-manager respondents are in Intercity, so 'within thread' means within Intercity only. HRMS keeps only the current manager, so earlier or repeated changes are invisible. Observational data: the April baseline makes a pre-existing difference unlikely, but it is not an experiment.
 
@@ -204,7 +205,7 @@ Before each next wave, also check thread response rates (F8) so a rise is not a 
 
 *Hypothesis 4 · Sentiment · Verdict: **Supported** · **Deck candidate***
 
-**Finding.** Q2 manager feedback has the strongest link with recommending Porter among the below-median drivers (Spearman ρ = 0.65, n = 796) and an October mean of 3.11 / 5 (April 3.31); it is also the most important driver overall.
+**Finding.** Q2 manager feedback has the strongest link with recommending Porter among the below-median drivers (Spearman ρ = 0.65, n = 796) and an October mean of 3.11 / 5 (April 3.31); it is also the most important driver overall. In comments, Manager rose from 9.6% to 16.7% of themed comments and Onboarding from 10.7% to 17.6%, while Positive fell from 37.6% to 24.0% (comments n = 271 / 233).
 
 | Group | Value | n |
 |---|---|---|
@@ -213,6 +214,12 @@ Before each next wave, also check thread response rates (F8) so a rise is not a 
 | Q5 onboarding/tools | ρ 0.62 · mean Oct 3.13 (Apr 3.24) · 40.7% fav | 798 |
 | Q4 workload | ρ 0.61 · mean Oct 3.10 (Apr 3.12) · 36.0% fav | 795 |
 | Q3 fair pay | ρ 0.59 · mean Oct 3.01 (Apr 3.04) · 35.6% fav | 795 |
+| Comment theme 'Positive': share of themed comments Apr → Oct | 37.6% → 24.0% | 271 / 233 |
+| Comment theme 'Onboarding': share of themed comments Apr → Oct | 10.7% → 17.6% | 271 / 233 |
+| Comment theme 'Manager': share of themed comments Apr → Oct | 9.6% → 16.7% | 271 / 233 |
+| Comment theme 'Pay': share of themed comments Apr → Oct | 18.5% → 15.5% | 271 / 233 |
+| Comment theme 'Workload': share of themed comments Apr → Oct | 12.5% → 13.3% | 271 / 233 |
+| Comment theme 'Growth': share of themed comments Apr → Oct | 11.1% → 12.9% | 271 / 233 |
 
 **Test.** Spearman correlations with Q1 (October): Q2 p < 0.001; Q6 p < 0.001; Q5 p < 0.001; Q4 p < 0.001; Q3 p < 0.001.
 
@@ -402,6 +409,8 @@ Before each next wave, also check thread response rates (F8) so a rise is not a 
 |---|---|---|
 | Interviewer A (Engineering, G5): median feedback days | 12 | 13 |
 | Interviewer B (Engineering, G6): median feedback days | 10 | 11 |
+| Interviewer A (Engineering, G5): R1 candidates who withdrew | 5 (27.8%) | 18 |
+| Interviewer B (Engineering, G6): R1 candidates who withdrew | 8 (42.1%) | 19 |
 | All other interviewers (≥5 interviews): median of medians | 1.0 | 1111 |
 | R1 candidates who withdrew — slow interviewers | 13 (35.1%) | 37 |
 | R1 candidates who withdrew — everyone else | 0 (0.0%) | 1124 |
@@ -456,7 +465,7 @@ Before each next wave, also check thread response rates (F8) so a rise is not a 
 
 **Test.** Offer acceptance, agency vs others: two-proportion z-test, significant (p < 0.001). Applicant → hire, agency vs referral: two-proportion z-test, significant (p < 0.001).
 
-**Caveat.** Role mix is not controlled: if agencies are used for harder roles, part of the gap is the role, not the source. Acceptance is per offer; applicant → hire is per applicant.
+**Caveat.** Role mix is not controlled: if agencies are used for harder roles, part of the gap is the role, not the source. Acceptance is per offer; applicant → hire is per applicant. Agency fee = 8.33% of offered CTC, charged for agency joiners only.
 
 **So what / action.** Expand the referral programme (bonus, internal job posts first) and use agencies only for roles referrals and internal moves cannot fill.
 

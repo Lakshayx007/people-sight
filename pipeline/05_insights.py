@@ -231,6 +231,7 @@ add("F2", "2", "Sentiment", "People who changed manager are far less positive �
     [grp("Changed manager, October", sgn(enps(ch_o)), len(ch_o)),
      grp("Same manager, October", sgn(enps(sm_o)), len(sm_o)),
      grp("Changed manager, April (before the change)", sgn(enps(ch_a)), len(ch_a)),
+     grp("Same manager, April", sgn(enps(sm_a)), len(sm_a)),
      grp("Same manager in Intercity, April", sgn(enps(sm_a[sm_a.thread == 'Intercity'])),
          len(sm_a[sm_a.thread == "Intercity"])),
      grp("Panel: mean Q1 change, Changed manager", sgn(pc.q1_oct.sub(pc.q1_apr).mean(), 2), len(pc)),
@@ -238,7 +239,7 @@ add("F2", "2", "Sentiment", "People who changed manager are far less positive �
      grp("Q2 manager feedback, % favourable Oct: Changed", pct(fav(ch_o.q2)), len(ch_o)),
      grp("Q2 manager feedback, % favourable Oct: Same", pct(fav(sm_o.q2)), len(sm_o))],
     f"Raw gap: z-test, {sig_text(t2['p'])}. Within thread × grade ({len(strata)} strata, {n_strat} respondents, "
-    f"{ch_in_strata} changed): permutation test, {sig_text(p_strat)}. Panel per-person Q1 change, Changed vs Same: "
+    f"{ch_in_strata} changed): permutation test ({N_PERM:,} shuffles within strata), {sig_text(p_strat)}. Panel per-person Q1 change, Changed vs Same: "
     f"Mann-Whitney, {sig_text(mw_pan['p'])}. Q2 in October: Mann-Whitney, {sig_text(mw_q2['p'])}; Q2 change on the "
     f"panel: {sig_text(mw_q2p['p'])}. Before the change (April), Changed vs Intercity Same manager: "
     f"{sig_text(t2_apr['p'])} — no gap existed beforehand.",
@@ -408,13 +409,25 @@ imp = pd.DataFrame(imp).sort_values("rho", ascending=False)
 med_mean = imp.mean_oct.median()
 fix = imp[imp.mean_oct <= med_mean].sort_values("rho", ascending=False).iloc[0]
 top_imp = imp.iloc[0]
+thm = metric(metrics_enps.themes)
+thm_p = thm.pivot(index="theme", columns="wave", values="pct_of_comments")
+thm_n = thm.groupby("wave").comments.sum()
+thm_up = (thm_p["Oct"] - thm_p["Apr"]).drop("Positive", errors="ignore").sort_values(ascending=False)
+th1, th2 = thm_up.index[0], thm_up.index[1]
 add("F4", "4", "Sentiment", f"Fix {fix.driver.split(' ', 1)[1]} first: it matters most among the low-scoring drivers",
     f"{fix.driver} has the strongest link with recommending Porter among the below-median drivers (Spearman "
     f"ρ = {fix.rho:.2f}, n = {int(fix.n)}) and an October mean of {fix.mean_oct:.2f} / 5 (April {fix.mean_apr:.2f})"
-    + ("; it is also the most important driver overall." if fix.driver == top_imp.driver else
-       f"; the most important driver overall is {top_imp.driver} (ρ = {top_imp.rho:.2f})."),
+    + ("; it is also the most important driver overall" if fix.driver == top_imp.driver else
+       f"; the most important driver overall is {top_imp.driver} (ρ = {top_imp.rho:.2f})")
+    + f". In comments, {th1} rose from {pct(thm_p.loc[th1, 'Apr'])} to {pct(thm_p.loc[th1, 'Oct'])} of themed comments "
+      f"and {th2} from {pct(thm_p.loc[th2, 'Apr'])} to {pct(thm_p.loc[th2, 'Oct'])}, while Positive fell from "
+      f"{pct(thm_p.loc['Positive', 'Apr'])} to {pct(thm_p.loc['Positive', 'Oct'])} (comments n = {int(thm_n['Apr'])} / "
+      f"{int(thm_n['Oct'])}).",
     [grp(r.driver, f"ρ {r.rho:.2f} · mean Oct {r.mean_oct:.2f} (Apr {r.mean_apr:.2f}) · {pct(r.fav_oct)} fav",
-         int(r.n)) for r in imp.itertuples()],
+         int(r.n)) for r in imp.itertuples()]
+    + [grp(f"Comment theme '{t}': share of themed comments Apr → Oct",
+           f"{pct(thm_p.loc[t, 'Apr'])} → {pct(thm_p.loc[t, 'Oct'])}", f"{int(thm_n['Apr'])} / {int(thm_n['Oct'])}")
+       for t in thm_p.sort_values("Oct", ascending=False).index],
     "Spearman correlations with Q1 (October): " + "; ".join(f"{r.driver.split(' ')[0]} {fmt_p(r.p)}"
                                                            for r in imp.itertuples()) + ".",
     "Correlation is not causation, and drivers correlate with each other; importance here is a ranking aid. Uses "
@@ -672,6 +685,10 @@ add("F12", "12", "Hiring", "Two slow R1 interviewers lose candidates: " + (
     f"({pct(t12['p2'])}) for every other interviewer.",
     [grp(f"{nm.get(i, i)}: median feedback days", f"{per_int.loc[i, 'median']:.0f}", int(per_int.loc[i, "size"]))
      for i in slow_ids]
+    + [grp(f"{nm[i]}: R1 candidates who withdrew",
+           f"{int((slow_c[slow_c.r1_interviewer_id == i].candidate_status == 'Withdrawn').sum())} "
+           f"({pct(100 * (slow_c[slow_c.r1_interviewer_id == i].candidate_status == 'Withdrawn').mean())})",
+           int((slow_c.r1_interviewer_id == i).sum())) for i in slow_ids]
     + [grp("All other interviewers (≥5 interviews): median of medians",
            f"{per_int.iloc[2:]['median'].median():.1f}", int(per_int.iloc[2:]['size'].sum())),
        grp("R1 candidates who withdrew — slow interviewers", f"{wd_s} ({pct(t12['p1'])})", len(slow_c)),
@@ -754,7 +771,8 @@ add("F14", "14", "Hiring", "Agency is the costliest and least reliable source; r
     f"Offer acceptance, agency vs others: {t14['test']}, {sig_text(t14['p'])}. Applicant → hire, agency vs referral: "
     f"{t14b['test']}, {sig_text(t14b['p'])}.",
     "Role mix is not controlled: if agencies are used for harder roles, part of the gap is the role, not the "
-    "source. Acceptance is per offer; applicant → hire is per applicant.",
+    "source. Acceptance is per offer; applicant → hire is per applicant. Agency fee = 8.33% of offered CTC, charged "
+    "for agency joiners only.",
     "Expand the referral programme (bonus, internal job posts first) and use agencies only for roles referrals and "
     "internal moves cannot fill.",
     effect=abs(t14["d"]), n=t14["n"], act=2, act_why="TA can shift sourcing mix; benefit builds over quarters",
@@ -953,7 +971,9 @@ BYID = {f["id"]: f for f in FINDINGS}
 
 
 # ============================================================================================================== CHARTS
-def chart(f: dict) -> str | None:
+def chart(f: dict, bare: bool = False) -> str | None:
+    """Deck chart (16:9, finding as title, n in subtitle). bare=True: no title / subtitle / source, smaller canvas,
+    saved to charts/deck/ for slides whose headline already states the finding; the n text goes to f['chart_ns']."""
     import matplotlib
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
@@ -965,7 +985,7 @@ def chart(f: dict) -> str | None:
                          "axes.spines.right": False, "axes.edgecolor": "#D1D5DB", "axes.labelcolor": INK,
                          "xtick.color": INK, "ytick.color": INK})
     import textwrap
-    fig, ax = plt.subplots(figsize=(13.333, 7.5), dpi=150)
+    fig, ax = plt.subplots(figsize=(10, 5.625) if bare else (13.333, 7.5), dpi=200 if bare else 150)
     title_lines = textwrap.wrap(f["title"], 64)
     top = 0.80 if len(title_lines) == 1 else 0.74
     fig.subplots_adjust(left=0.09, right=0.95, top=top, bottom=0.14)
@@ -1063,7 +1083,7 @@ def chart(f: dict) -> str | None:
         ax.legend(frameon=False, loc="lower right", fontsize=15)
         ns_txt = "n (hires with both stage dates) — " + " | ".join(
             f"{s_[0]}: {min(s_[2])}-{max(s_[2])}" for s_ in series)
-        fig.subplots_adjust(left=0.24)
+        fig.subplots_adjust(left=0.31 if bare else 0.24)
     elif kind == "scatter":
         order = np.argsort(spec["x"])
         for k_, i in enumerate(order):
@@ -1089,9 +1109,18 @@ def chart(f: dict) -> str | None:
         ax.set_xlabel(spec["xlabel"])
         ax.set_ylabel(spec["ylabel"])
         ns_txt = f"n = {spec['n']} replacement reqs; dashed line = median"
+    cid = spec.get("file", f["id"]).replace("_", " + ")
+    if bare:
+        f["chart_ns"] = ns_txt + (f" · {spec['note']}" if spec.get("note") else "")
+        fig.subplots_adjust(top=0.92, bottom=0.15)
+        out_dir = CHARTS / "deck"
+        out_dir.mkdir(parents=True, exist_ok=True)
+        name = spec.get("file", f["id"])
+        fig.savefig(out_dir / f"{name}.png")
+        plt.close(fig)
+        return f"charts/deck/{name}.png"
     fig.text(0.04, 0.965, "\n".join(title_lines), fontsize=24, fontweight="bold", color=INK, ha="left", va="top",
              linespacing=1.15)
-    cid = spec.get("file", f["id"]).replace("_", " + ")
     full = f"{cid} · {ns_txt}" + (f" · {spec['note']}" if spec.get("note") else "")
     sub = textwrap.wrap(full, 115)[:3]
     fig.subplots_adjust(top=min(top, 0.965 - 0.062 * len(title_lines) - 0.012 - 0.036 * len(sub) - 0.035))
