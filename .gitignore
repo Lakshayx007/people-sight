@@ -1,0 +1,32 @@
+# secrets
+.env
+.env.*
+!.env.example
+
+# python
+__pycache__/
+*.pyc
+.pytest_cache/
+.venv/
+venv/
+
+# node / frontend
+node_modules/
+frontend/dist/
+
+# generated data
+data/clean/
+*.duckdb
+*.duckdb.wal
+
+# read-only reference clone (has its own .git; source is on GitHub)
+reference/
+
+# original workbooks as received (pipeline uses data/raw/ copies)
+/*.xlsx
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
