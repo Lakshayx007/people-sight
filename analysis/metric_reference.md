@@ -310,9 +310,9 @@ Survey groups with fewer than 5 respondents show — (suppressed). Percentages a
 
 | nps_group | n | exited | pct_exited | pct_voluntary_exit | pct_regrettable_exit | suppressed |
 |---|---|---|---|---|---|---|
-| Detractor | 245 | 78 | 31.8 | 87.2 | 21.2 | False |
-| Passive | 281 | 34 | 12.1 | 82.4 | 7.8 | False |
-| Promoter | 340 | 19 | 5.6 | 89.5 | 4.1 | False |
+| Detractor | 245 | 78 | 31.8 | 27.8 | 21.2 | False |
+| Passive | 281 | 34 | 12.1 | 10 | 7.8 | False |
+| Promoter | 340 | 19 | 5.6 | 5 | 4.1 | False |
 
 ### Non-response bias — overall
 

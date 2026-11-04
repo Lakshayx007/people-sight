@@ -219,7 +219,7 @@ WITH s AS (SELECT * FROM v_survey WHERE {f} AND wave = 'Apr')
 SELECT nps_group, count(*) AS n,
        {_sup('count(*)', 'sum(exited_after_wave::INT)')} AS exited,
        {_sup('count(*)', 'round(100.0 * avg(exited_after_wave::INT), 1)')} AS pct_exited,
-       {_sup('count(*)', "round(100.0 * avg((exit_type_after_wave = 'Voluntary')::INT), 1)")} AS pct_voluntary_exit,
+       {_sup('count(*)', "round(100.0 * avg(coalesce(exit_type_after_wave = 'Voluntary', false)::INT), 1)")} AS pct_voluntary_exit,
        {_sup('count(*)', 'round(100.0 * avg(regrettable_after_wave::INT), 1)')} AS pct_regrettable_exit,
        count(*) < {MIN_N} AS suppressed
 FROM s GROUP BY nps_group

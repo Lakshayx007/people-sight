@@ -287,3 +287,15 @@ def test_suppression_on_combination(q):
     for df, ncol, vcol in [(q(E.by_wave, w), "n", "enps"), (q(E.segment, "function", w), "n_oct", "enps_oct"),
                            (q(E.drivers, w), "n", "mean_score")]:
         assert df.loc[df[ncol] < MIN_N, vcol].isna().all()
+
+
+def test_exit_shares_use_whole_group(q, enps):
+    """pct_voluntary_exit / pct_regrettable_exit are shares of ALL April respondents in the group (not of leavers)."""
+    v = enps["resp"][enps["resp"].is_valid & (enps["resp"].wave == "Apr")]
+    ex = q(E.respondents_who_exited).set_index("nps_group")
+    for g, sub in v.groupby("nps_group"):
+        vol = (sub.exited_after_wave & (sub.exit_type == "Voluntary")).sum()
+        reg = (sub.exited_after_wave & sub.is_regrettable_exit.fillna(False).astype(bool)).sum()
+        assert ex.loc[g, "pct_voluntary_exit"] == round(100 * vol / len(sub), 1), g
+        assert ex.loc[g, "pct_regrettable_exit"] == round(100 * reg / len(sub), 1), g
+        assert ex.loc[g, "pct_voluntary_exit"] <= ex.loc[g, "pct_exited"]

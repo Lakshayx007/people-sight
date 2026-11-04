@@ -1,0 +1,64 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@import "tailwindcss";
+
+/* Design tokens (adapted from Onco-Sight). One accent colour; negative and warning are status colours only. */
+@theme {
+  --color-background: var(--bg);
+  --color-surface: var(--surf);
+  --color-subtle: var(--subtle);
+  --color-primary: var(--prim);
+  --color-accent: var(--acc);
+  --color-accent-soft: var(--acc-soft);
+  --color-muted: var(--mut);
+  --color-border: var(--bord);
+  --color-negative: var(--neg);
+  --color-warn: var(--warn);
+  --color-warn-soft: var(--warn-soft);
+  --font-sans: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+}
+
+:root {
+  --bg: #F5F6F8;
+  --surf: #FFFFFF;
+  --subtle: #F9FAFB;
+  --prim: #111827;
+  --acc: #2563EB;
+  --acc-soft: #DBEAFE;
+  --mut: #6B7280;
+  --bord: #E5E7EB;
+  --neg: #DC2626;
+  --warn: #B45309;
+  --warn-soft: #FEF3C7;
+  color-scheme: light;
+}
+
+.dark {
+  --bg: #0E1116;
+  --surf: #161A22;
+  --subtle: #1B2029;
+  --prim: #E5E7EB;
+  --acc: #60A5FA;
+  --acc-soft: #1E3A5F;
+  --mut: #9CA3AF;
+  --bord: #2A303B;
+  --neg: #F87171;
+  --warn: #FBBF24;
+  --warn-soft: #3B2F12;
+  color-scheme: dark;
+}
+
+@layer base {
+  html, body, #root { height: 100%; }
+  body {
+    @apply bg-background text-primary antialiased;
+    font-family: var(--font-sans);
+  }
+}
+
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: color-mix(in srgb, var(--mut) 30%, transparent); border-radius: 9999px; }
+
+.tabular-nums { font-variant-numeric: tabular-nums; }
+
+pre.sql { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 11px; line-height: 1.55; }
