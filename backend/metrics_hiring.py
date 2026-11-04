@@ -4,7 +4,12 @@ metrics_hiring.py
 One function per Hiring metric. Each returns (sql, params).
 
 Filters: `wr` applies to v_requisitions, `wc` to v_candidates (v_candidates carries the requisition's
-attributes under the same column names, plus `source`). filters.build_where() in Phase 5 builds both.
+attributes under the same column names, plus `source`). filters.build_where() builds both.
+
+Fill measures (filled, TTF, SLA met) are computed from the HIRED CANDIDATE's row (v_candidates.is_hire), and
+volume measures (reqs raised, open, past SLA) from v_requisitions. Unfiltered they are identical to counting
+requisitions. Under a Source filter they mean: reqs raised / open = reqs with >= 1 applicant from the source;
+filled / TTF / SLA = reqs filled by a candidate from the source — so the funnel always reconciles with the KPIs.
 
 Definitions (the case brief): TTF = hired candidate's Offer Response On - Req Raised On (days).
 SLA met = TTF <= SLA days (recomputed status is authoritative). Open reqs breached if age at 31-Oct > SLA.
@@ -36,12 +41,12 @@ def kpis(wr: Where = ALL, wc: Where = ALL):
 WITH {ctes}
 SELECT (SELECT count(*) FROM r) AS reqs_raised,
        (SELECT count(*) FILTER (WHERE is_open) FROM r) AS open_reqs,
-       (SELECT count(*) FILTER (WHERE is_filled) FROM r) AS filled_reqs,
-       (SELECT count(*) FILTER (WHERE hire_status = 'Joined') FROM r) AS filled_joined,
-       (SELECT count(*) FILTER (WHERE hire_status = 'Yet to Join') FROM r) AS filled_yet_to_join,
+       (SELECT count(*) FILTER (WHERE is_hire) FROM c) AS filled_reqs,
+       (SELECT count(*) FILTER (WHERE is_hire AND is_joined) FROM c) AS filled_joined,
+       (SELECT count(*) FILTER (WHERE is_hire AND NOT is_joined) FROM c) AS filled_yet_to_join,
        (SELECT count(*) FILTER (WHERE req_status IN ('On Hold', 'Archived')) FROM r) AS on_hold_or_archived,
-       (SELECT median(ttf_days) FROM r WHERE is_filled) AS median_ttf_days,
-       (SELECT round(100.0 * avg(sla_met::INT), 1) FROM r WHERE is_filled) AS pct_within_sla,
+       (SELECT median(req_ttf_days) FROM c WHERE is_hire) AS median_ttf_days,
+       (SELECT round(100.0 * avg(req_sla_met::INT), 1) FROM c WHERE is_hire) AS pct_within_sla,
        (SELECT count(*) FILTER (WHERE open_breached) FROM r) AS open_past_sla,
        (SELECT count(*) FILTER (WHERE is_offer_accepted) FROM c) AS offers_accepted,
        (SELECT count(*) FILTER (WHERE is_offer_declined) FROM c) AS offers_declined,
@@ -130,17 +135,17 @@ def recruiters(wr: Where = ALL, wc: Where = ALL, months: int = len(FY_MONTHS)):
     sql = f"""
 WITH {ctes},
      rq AS (SELECT recruiter, count(*) AS reqs, count(*) FILTER (WHERE is_open) AS open_reqs,
-                   count(*) FILTER (WHERE open_breached) AS open_past_sla,
-                   count(*) FILTER (WHERE is_filled) AS filled, median(ttf_days) FILTER (WHERE is_filled) AS median_ttf_days,
-                   round(100.0 * avg(sla_met::INT) FILTER (WHERE is_filled), 1) AS pct_within_sla
+                   count(*) FILTER (WHERE open_breached) AS open_past_sla
             FROM r GROUP BY recruiter),
      ac AS (SELECT recruiter, count(*) FILTER (WHERE is_offer_accepted) AS acc_all,
-                   count(*) FILTER (WHERE is_offer_accepted AND NOT is_backed_out) AS acc_excl_bo
+                   count(*) FILTER (WHERE is_offer_accepted AND NOT is_backed_out) AS acc_excl_bo,
+                   count(*) FILTER (WHERE is_hire) AS filled, median(req_ttf_days) FILTER (WHERE is_hire) AS median_ttf_days,
+                   round(100.0 * avg(req_sla_met::INT) FILTER (WHERE is_hire), 1) AS pct_within_sla
             FROM c GROUP BY recruiter)
 SELECT t.recruiter, t.recruiter_id, coalesce(rq.reqs, 0) AS reqs,
        round(100.0 * coalesce(rq.reqs, 0) / nullif(sum(rq.reqs) OVER (), 0), 1) AS pct_of_reqs,
        coalesce(rq.open_reqs, 0) AS open_reqs, coalesce(rq.open_past_sla, 0) AS open_past_sla,
-       coalesce(rq.filled, 0) AS filled, rq.median_ttf_days, rq.pct_within_sla,
+       coalesce(ac.filled, 0) AS filled, ac.median_ttf_days, ac.pct_within_sla,
        t.monthly_offer_target,
        coalesce(ac.acc_all, 0) AS offers_accepted_all,
        round(coalesce(ac.acc_all, 0) / $months, 2) AS accepted_per_month_all,
@@ -173,17 +178,20 @@ LIMIT $top"""
 
 
 def ttf_by_grade(wr: Where = ALL, wc: Where = ALL):
-    """Per grade: filled reqs, median / p75 TTF, SLA days, % within SLA."""
+    """Per grade: reqs raised, filled, median / p75 TTF, SLA days, breached, % within SLA (fill measures from hires)."""
+    ctes, p = _ctes(wr, wc)
     sql = f"""
-WITH r AS (SELECT * FROM v_requisitions WHERE {wr[0]})
-SELECT grade, min(grade_num) AS grade_num, count(*) AS reqs, count(*) FILTER (WHERE is_filled) AS filled,
-       median(ttf_days) FILTER (WHERE is_filled) AS median_ttf_days,
-       quantile_cont(ttf_days, 0.75) FILTER (WHERE is_filled) AS p75_ttf_days,
-       max(sla_days) AS sla_days,
-       count(*) FILTER (WHERE is_filled AND NOT sla_met) AS breached,
-       round(100.0 * avg(sla_met::INT) FILTER (WHERE is_filled), 1) AS pct_within_sla
-FROM r GROUP BY grade ORDER BY grade_num"""
-    return sql, dict(wr[1])
+WITH {ctes},
+     rg AS (SELECT grade, min(grade_num) AS grade_num, count(*) AS reqs, max(sla_days) AS sla_days FROM r GROUP BY grade),
+     hg AS (SELECT grade, count(*) AS filled, median(req_ttf_days) AS median_ttf_days,
+                   quantile_cont(req_ttf_days, 0.75) AS p75_ttf_days,
+                   count(*) FILTER (WHERE NOT req_sla_met) AS breached,
+                   round(100.0 * avg(req_sla_met::INT), 1) AS pct_within_sla
+            FROM c WHERE is_hire GROUP BY grade)
+SELECT rg.grade, rg.grade_num, rg.reqs, coalesce(hg.filled, 0) AS filled, hg.median_ttf_days, hg.p75_ttf_days,
+       rg.sla_days, coalesce(hg.breached, 0) AS breached, hg.pct_within_sla
+FROM rg LEFT JOIN hg USING (grade) ORDER BY rg.grade_num"""
+    return sql, p
 
 
 def open_aging(wr: Where = ALL, wc: Where = ALL):

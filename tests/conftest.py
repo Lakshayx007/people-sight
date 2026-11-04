@@ -58,3 +58,13 @@ def q(db):
         sql, params = fn(*a, **k)
         return db.execute(sql, params).df()
     return run
+
+
+@pytest.fixture(scope="session")
+def api(db):
+    import warnings
+    warnings.filterwarnings("ignore", category=DeprecationWarning)
+    from fastapi.testclient import TestClient
+    from backend.main import app
+    with TestClient(app) as client:
+        yield client

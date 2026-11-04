@@ -171,7 +171,7 @@ VIEWS = {
            c.is_offer_accepted, c.is_offer_declined, c.is_backed_out, c.is_joined, c.joining_due,
            c.offer_to_expected_ratio, c.offer_to_budget_ratio, c.is_hire, c.agency_fee_inr,
            r.thread, r.function, r.job_family, r.grade, r.grade_num, r.location, r.position_type, r.criticality,
-           r.req_status, r.recruiter, r.raised_month, r.sla_days, r.ttf_days AS req_ttf_days
+           r.req_status, r.recruiter, r.raised_month, r.sla_days, r.ttf_days AS req_ttf_days, r.sla_met AS req_sla_met
     FROM t_candidates c JOIN t_requisitions r USING (req_id)""",
     "One row per candidate application (36 orphans with no requisition excluded), with the requisition's attributes "
     "so the same hiring filters apply."),
@@ -327,6 +327,7 @@ COMMENTS = {
 "is_hire": "This candidate is the req's hired candidate",
 "agency_fee_inr": "8.33% x offered_ctc for agency-sourced candidates who joined, else 0",
 "req_ttf_days": "Time to fill of the candidate's requisition",
+"req_sla_met": "The candidate's requisition was filled within SLA (filled reqs only)",
 # recruiters / interviewers
 "monthly_offer_target": "Accepted offers expected per recruiter per month",
 "status": "Recruiter status",
