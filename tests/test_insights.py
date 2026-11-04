@@ -24,7 +24,7 @@ def ins(tmp_path_factory):
 
 def test_every_hypothesis_tested(ins):
     hyps = {f["hyp"] for f in ins.FINDINGS}
-    assert hyps == {str(i) for i in range(1, 20)} | {"2b", "3a", "3b"}
+    assert {h.split(" ")[0] for h in hyps} == {str(i) for i in range(1, 21)} | {"2b", "3a", "3b"}
 
 
 def test_findings_complete(ins):
@@ -37,11 +37,12 @@ def test_findings_complete(ins):
 
 
 def test_deck_top8_ranked(ins):
-    assert len(ins.deck) == ins.TOP_N == 8
+    assert set(ins.DECK_ADDED) <= set(ins.deck) and len(ins.deck) >= ins.TOP_N
     assert all(not ins.BYID[d]["verdict"].startswith("Not supported") for d in ins.deck)
-    for d in ins.deck:
-        assert (ins.CHARTS / f"{d}.png").exists()
-    assert len(list(ins.CHARTS.glob("F*.png"))) == 8
+    files = {(ins.BYID[d]["chart"] or {}).get("file", d) for d in ins.deck + ins.EXTRA_CHARTS}
+    files.discard("F16")                                       # F16 shares the combined F7_F16 chart
+    assert {p.stem for p in ins.CHARTS.glob("F*.png")} == files
+    assert {"F7_F16", "F10", "F20"} <= files
 
 
 def test_numbers_match_dashboard_metrics(ins):
@@ -65,13 +66,13 @@ def test_counterfactuals_bounded(ins):
     assert co["fits"] <= co["n_low"] and 0 <= co["avoided"] <= co["declines_fits"]
 
 
-def test_no_names_in_sentiment_findings(ins):
+def test_no_names_or_ids_in_insights(ins):
+    """Names stay on the dashboard Hiring page only; insights and charts use 'Interviewer A (function, grade)'."""
     names = set(ins.names.employee_name)
-    for f in ins.FINDINGS:
-        if f["area"] != "Hiring":
-            text = f["finding"] + str(f["table"]) + f["title"]
-            assert not any(n in text for n in names), f["id"]
-            assert not re.search(r"EMP\d{5}", text), f["id"]
+    md = (ins.OUT / "insights.md").read_text(encoding="utf-8")
+    assert not any(n in md for n in names)
+    assert not re.search(r"EMP\d{5}", md)
+    assert "Interviewer A (" in md and "Interviewer B (" in md
 
 
 def test_dq_note_counts_from_log(ins):

@@ -26,3 +26,4 @@ Written from the case brief before testing; `pipeline/05_insights.py` tests each
 | 17 | Low / falling eNPS teams raise more replacement reqs | v_survey, v_employees, v_requisitions (team level) | Spearman |
 | 18 | Interviewers and hiring managers report worse Q4 workload (n ≥ 5) | v_survey (role flags) | Mann-Whitney |
 | 19 | This year's joiners rate Q5 onboarding lower in October | v_survey | Mann-Whitney |
+| 20 | Where the days go: median days per funnel stage for filled reqs, overall vs G6+ (added at the Phase 9 review) | v_requisitions, v_candidates | Mann-Whitney per stage |

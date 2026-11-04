@@ -594,9 +594,12 @@ add("F10", "10", "Hiring", "Senior roles (G6+) breach SLA most; junior and mid r
     "Give G6+ roles a dedicated senior-hiring track (pre-approved offer ranges, early search partner) or a realistic "
     "SLA; review every G6+ req at day 30.",
     effect=abs(t10["d"]), n=t10["n"], act=2, act_why="clear target group; partly market-driven",
-    chart=dict(kind="bar", cats=list(g10.grade), vals=[r.med for r in g10.itertuples()], ns=list(g10.n.astype(int)),
-               colors=[RED if r.med > r.sla else ACCENT for r in g10.itertuples()], ylabel="Median time to fill (days)",
-               sla=list(g10.sla.astype(float))))
+    chart=dict(kind="bar", cats=[f"{r.grade}\nSLA {r.sla:.0f} d" for r in g10.itertuples()],
+               vals=[100 * r.met for r in g10.itertuples()], ns=list(g10.n.astype(int)),
+               colors=[RED if r.met < 0.5 else ACCENT for r in g10.itertuples()],
+               ylabel="Filled within SLA (%)", unit="%",
+               hline=(100 * filled.sla_met.mean(), ""),
+               note=f"dashed line = all grades ({100 * filled.sla_met.mean():.1f}%); red = most fills breached SLA"))
 
 # ---------------------------------------------------------------------------------------------- H11 recruiter concentration
 rc = metric(metrics_hiring.recruiter_comparison)
@@ -636,8 +639,11 @@ per_int = fb.groupby("r1_interviewer_id").r1_feedback_days.agg(["size", "median"
 per_int = per_int[per_int["size"] >= 5].sort_values("median", ascending=False)
 slow_ids = list(per_int.head(2).index)
 med_all = float(fb.r1_feedback_days.median())
-names = q("select employee_id, employee_name from v_interviewers")  # hiring data only — never joined to survey data
-nm = dict(zip(names.employee_id, names.employee_name))
+# Interviewers are labelled "Interviewer A (function, grade)" in insights and charts; names stay on the dashboard Hiring
+# page only. HRMS has duplicate names, so everything is keyed on Employee ID.
+names = q("select employee_id, employee_name, function, grade from v_interviewers")
+_iv = names.set_index("employee_id")
+nm = {i: f"Interviewer {chr(65 + k)} ({_iv.loc[i, 'function']}, {_iv.loc[i, 'grade']})" for k, i in enumerate(slow_ids)}
 r1 = CAND[CAND.reached_r1_interview]
 slow_c, other_c = r1[r1.r1_interviewer_id.isin(slow_ids)], r1[~r1.r1_interviewer_id.isin(slow_ids)]
 wd_s, wd_o = int((slow_c.candidate_status == "Withdrawn").sum()), int((other_c.candidate_status == "Withdrawn").sum())
@@ -680,9 +686,13 @@ add("F12", "12", "Hiring", "Two slow R1 interviewers lose candidates: " + (
     "Set a 48-hour R1 feedback rule with an automatic reminder and escalation to the hiring manager; reassign "
     "pending candidates from these two interviewers now.",
     effect=abs(t12["d"]), n=t12["n"], act=3, act_why="two named people, a simple rule, immediate",
-    chart=dict(kind="bar", cats=["Two slowest\nR1 interviewers", "All other\ninterviewers"],
-               vals=[t12["p1"], t12["p2"]], ns=[len(slow_c), len(other_c)], colors=[RED, ACCENT],
-               ylabel="R1 candidates who withdrew (%)", unit="%"))
+    chart=dict(kind="bar", cats=[nm[i].replace(" (", "\n(") for i in slow_ids] + ["All other\ninterviewers"],
+               vals=[100 * (slow_c[slow_c.r1_interviewer_id == i].candidate_status == "Withdrawn").mean()
+                     for i in slow_ids] + [t12["p2"]],
+               ns=[int((slow_c.r1_interviewer_id == i).sum()) for i in slow_ids] + [len(other_c)],
+               colors=[RED] * len(slow_ids) + [ACCENT], ylabel="R1 candidates who withdrew (%)", unit="%",
+               note=f"median R1 feedback: " + ", ".join(f"{nm[i].split(' (')[0]} {per_int.loc[i, 'median']:.0f} d"
+                                                         for i in slow_ids) + f"; company {med_all:.0f} d"))
 
 # --------------------------------------------------------------------------------------------- H13 offer declines vs CTC
 off = CAND[CAND.is_offer_accepted | CAND.is_offer_declined].copy()
@@ -861,14 +871,66 @@ add("F19", "19", "Cross-dataset", "This year's joiners rate onboarding far below
     "Same onboarding action as F2b; track Q5 for this FY's joiners in the next wave.",
     effect=abs(mw19["d"]), n=mw19["n"], act=3, act_why="onboarding is fully in HR's control")
 
+
+# ------------------------------------------------------------------------------------- F20 where the days go (filled)
+STAGES = [("Req raised → applied", "days_raised_to_applied"), ("Applied → shortlisted", "days_applied_to_shortlisted"),
+          ("Shortlisted → screening", "days_shortlisted_to_screening"), ("Screening → R1", "days_screening_to_r1"),
+          ("R1 → R2", "days_r1_to_r2"), ("R2 → offer", "days_r2_to_offer"),
+          ("Offer → response", "days_offer_to_response")]
+hc20 = filled.merge(CAND.drop(columns=[c for c in CAND.columns if c in filled.columns and c != "req_id"]
+                              + ["req_id"]), left_on="hired_candidate_id", right_on="candidate_id", how="left")
+hc20["days_raised_to_applied"] = (pd.to_datetime(hc20.applied_on) - pd.to_datetime(hc20.req_raised_on)).dt.days
+hc20.loc[hc20.days_raised_to_applied < 0, "days_raised_to_applied"] = np.nan
+sen20, jun20 = hc20[hc20.sla_days == 60], hc20[hc20.sla_days < 60]
+rows20, st_all, st_sen, n_all, n_sen, tests20 = [], [], [], [], [], {}
+for lab_, col in STAGES:
+    a_, s_, j_ = hc20[col].dropna(), sen20[col].dropna(), jun20[col].dropna()
+    st_all.append(float(a_.median())); st_sen.append(float(s_.median()))
+    n_all.append(len(a_)); n_sen.append(len(s_))
+    tests20[lab_] = mw_test(s_, j_)
+    rows20.append(grp(lab_, f"all {a_.median():.0f} d · G6+ {s_.median():.0f} d (G2-G5 {j_.median():.0f} d)",
+                      f"{len(a_)} / {len(s_)}"))
+gap20 = {k: tests20[k]["med_a"] - tests20[k]["med_b"] for k in tests20}
+big20 = max(gap20, key=gap20.get)
+long_all = STAGES[int(np.argmax(st_all))][0]
+rows20 += [grp("Median TTF, all filled / G6+ / G2-G5",
+               f"{filled.ttf_days.median():.0f} / {sen20.ttf_days.median():.0f} / {jun20.ttf_days.median():.0f} d",
+               f"{len(filled)} / {len(sen20)} / {len(jun20)}")]
+i_long = [l_ for l_, _ in STAGES].index(long_all)
+title20 = (f"Where the days go: for G6+ roles the eventual hire applies {st_sen[i_long]:.0f} days after the req is "
+           f"raised (vs {st_all[i_long]:.0f} overall); interviews take only days" if big20 == long_all
+           and long_all.startswith("Req raised") else
+           f"Where the days go: '{long_all}' is the longest stage; G6+ roles lose most extra time at '{big20}'")
+add("F20", "20 (added at review)", "Hiring", title20,
+    f"For filled reqs every stage takes a median of {min(st_all):.0f}-{max(st_all):.0f} days (n = {min(n_all)}-"
+    f"{max(n_all)} hires), the longest being {long_all}; "
+    f"for G6+ roles the biggest extra delay vs G2-G5 is at {big20} ({tests20[big20]['med_a']:.0f} vs "
+    f"{tests20[big20]['med_b']:.0f} days, n = {n_sen[[l_ for l_, _ in STAGES].index(big20)]} G6+ hires), while the "
+    f"interview stages take only a few days each.",
+    rows20,
+    f"G6+ vs G2-G5 at '{big20}': Mann-Whitney, {sig_text(tests20[big20]['p'])}. Other stages: "
+    + "; ".join(f"{k} {fmt_p(v['p'])}" for k, v in tests20.items() if k != big20) + ".",
+    "Stage times use the hired candidate's dated stages only (R1 Select has no date, so R1 → R2 covers it); medians "
+    "of stages do not add up to the median TTF. 'Req raised → applied' is when the eventual hire applied, i.e. "
+    "sourcing time. G6+ has few hires, so its medians move with one or two reqs.",
+    f"Attack the longest stage first ({long_all}); for G6+ start sourcing before the req is approved and pre-agree "
+    "offer ranges.",
+    effect=abs(tests20[big20]["d"]), n=tests20[big20]["n"], act=2, act_why="shows where to act; G6+ sample small",
+    chart=dict(kind="grouped_h", cats=[l_ for l_, _ in STAGES],
+               series=[("All filled reqs", st_all, n_all, GREY), ("G6+", st_sen, n_sen, ACCENT)],
+               xlabel="Median days (hired candidate)"))
+
 # ============================================================================================================= RANKING
 for f in FINDINGS:
     f["score"] = (f["effect"] * math.log10(f["n"]) * f["act"]) if f["effect"] is not None and f["n"] else None
 ranked = sorted([f for f in FINDINGS if f["score"] is not None], key=lambda f: -f["score"])
 # overlapping findings: keep the strongest of each overlap group in the deck list
 OVERLAP = [{"F2b", "F6", "F19"}, {"F3", "F3a"}]
+DECK_ADDED = ["F7", "F16", "F20"]           # added at the Phase 9 review (user decision), on top of the top 8
 deck, used = [], set()
 for f in ranked:
+    if f["id"] in DECK_ADDED:
+        continue
     grp_ = next((g for g in OVERLAP if f["id"] in g), None)
     if grp_ and grp_ & used:
         continue
@@ -879,6 +941,12 @@ for f in ranked:
         used |= grp_
     if len(deck) == TOP_N:
         break
+deck += [d for d in DECK_ADDED if d not in deck]
+EXTRA_CHARTS = ["F10"]                      # chart requested without deck flag
+_f7, _f16 = next(f for f in FINDINGS if f["id"] == "F7"), next(f for f in FINDINGS if f["id"] == "F16")
+_f7["chart"]["file"] = "F7_F16"
+_f7["chart"]["note"] = (f"Backfill (F16): replacement reqs raised a median {bf.days_exit_to_req.median():.0f} days after "
+                        f"the exit (n = {len(bf)}); {pct(100 * len(reg_b) / len(bf), 0)} replace regrettable exits")
 for f in FINDINGS:
     f["deck"] = f["id"] in deck
 BYID = {f["id"]: f for f in FINDINGS}
@@ -928,6 +996,12 @@ def chart(f: dict) -> str | None:
         if spec.get("xlabel"):
             ax.set_xlabel(spec["xlabel"])
         ax.axhline(0, color="#9CA3AF", linewidth=1)
+        if spec.get("hline"):
+            ax.axhline(spec["hline"][0], color=INK, linestyle="--", linewidth=1.5)
+        if spec.get("hline") and spec["hline"][1]:
+            ax.annotate(spec["hline"][1], (len(spec["cats"]) - 0.5, spec["hline"][0]), xytext=(0, 5),
+                        textcoords="offset points", ha="right", fontsize=13, color=MUTED,
+                        bbox=dict(boxstyle="round,pad=0.2", fc="white", ec="none"))
     elif kind == "barh":
         y = np.arange(len(spec["cats"]))
         bars = ax.barh(y, spec["vals"], color=spec["colors"], height=0.6)
@@ -973,6 +1047,23 @@ def chart(f: dict) -> str | None:
         allv = [v for s_ in series for v in s_[1] if not np.isnan(v)]
         span = max(max(allv), 0) - min(min(allv), 0)
         ax.set_ylim(min(min(allv), 0) - 0.12 * span if min(allv) < 0 else 0, max(max(allv), 0) + 0.30 * span)
+    elif kind == "grouped_h":
+        cats, series = spec["cats"], spec["series"]
+        y = np.arange(len(cats))
+        h = 0.8 / len(series)
+        for i, (name, vals, ns, col) in enumerate(series):
+            bars = ax.barh(y + (i - (len(series) - 1) / 2) * h, vals, h * 0.92, color=col, label=name)
+            for b, v in zip(bars, vals):
+                ax.annotate(f"{v:.0f} d", (v, b.get_y() + b.get_height() / 2), xytext=(6, 0),
+                            textcoords="offset points", va="center", fontsize=14, fontweight="bold", color=INK)
+        ax.set_yticks(y, cats)
+        ax.invert_yaxis()
+        ax.set_xlabel(spec.get("xlabel", ""))
+        ax.set_xlim(0, max(max(s_[1]) for s_ in series) * 1.15)
+        ax.legend(frameon=False, loc="lower right", fontsize=15)
+        ns_txt = "n (hires with both stage dates) — " + " | ".join(
+            f"{s_[0]}: {min(s_[2])}-{max(s_[2])}" for s_ in series)
+        fig.subplots_adjust(left=0.24)
     elif kind == "scatter":
         order = np.argsort(spec["x"])
         for k_, i in enumerate(order):
@@ -1000,15 +1091,19 @@ def chart(f: dict) -> str | None:
         ns_txt = f"n = {spec['n']} replacement reqs; dashed line = median"
     fig.text(0.04, 0.965, "\n".join(title_lines), fontsize=24, fontweight="bold", color=INK, ha="left", va="top",
              linespacing=1.15)
-    sub = textwrap.wrap(f"{f['id']} · {ns_txt}", 115)[:2]
+    cid = spec.get("file", f["id"]).replace("_", " + ")
+    full = f"{cid} · {ns_txt}" + (f" · {spec['note']}" if spec.get("note") else "")
+    sub = textwrap.wrap(full, 115)[:3]
+    fig.subplots_adjust(top=min(top, 0.965 - 0.062 * len(title_lines) - 0.012 - 0.036 * len(sub) - 0.035))
     fig.text(0.04, 0.965 - 0.062 * len(title_lines) - 0.012, "\n".join(sub), fontsize=14, color=MUTED, ha="left",
              va="top", linespacing=1.3)
     fig.text(0.97, 0.02, "Source: Porter People Analytics case data (synthetic), as of 31-Oct-2026", fontsize=11,
              color=MUTED, ha="right")
-    path = CHARTS / f"{f['id']}.png"
+    name = spec.get("file", f["id"])
+    path = CHARTS / f"{name}.png"
     fig.savefig(path)
     plt.close(fig)
-    return f"charts/{f['id']}.png"
+    return f"charts/{name}.png"
 
 
 # ============================================================================================================= WRITE MD
@@ -1118,10 +1213,12 @@ def write_dq_note() -> None:
 
 def main() -> None:
     CHARTS.mkdir(parents=True, exist_ok=True)
-    for old in CHARTS.glob("F*.png"):
+    for old in list(CHARTS.glob("F*.png")):
         old.unlink()
     for f in FINDINGS:
-        f["chart_path"] = chart(f) if f["deck"] else None
+        f["chart_path"] = (chart(f) if (f["deck"] or f["id"] in EXTRA_CHARTS) and f["chart"] and f["id"] != "F16"
+                           else None)
+    BYID["F16"]["chart_path"] = BYID["F7"]["chart_path"]   # one combined chart for F7 + F16
 
     cs_, ch_ = COUNTERFACTUAL_SENT, COUNTERFACTUAL_HIRE
     co = COUNTERFACTUAL_OFFER
@@ -1138,7 +1235,8 @@ def main() -> None:
         "## Ranking",
         "",
         "Score = |effect| × log10(n) × actionability (1 = little lever, 3 = clear owner and lever). Overlapping "
-        "findings (F2b / F6 / F19 onboarding; F3 / F3a Intercity) count once in the deck list. Descriptive findings "
+        "findings (F2b / F6 / F19 onboarding; F3 / F3a Intercity) count once in the top 8; F7, F16 and F20 were added to the "
+        "deck list at the Phase 9 review (F7 and F16 share one chart). Descriptive findings "
         "(F3b, F9) have no test and are listed after the scored ones; F3b is shown inside the F3a story.",
         "",
         "| Rank | ID | Finding | Verdict | Effect (d) | n | Act. | Score | Deck |",
@@ -1260,6 +1358,8 @@ def main() -> None:
         "18": ("Interviewers and hiring managers report worse Q4 workload (n ≥ 5)", "v_survey (role flags)",
                "Mann-Whitney"),
         "19": ("This year's joiners rate Q5 onboarding lower in October", "v_survey", "Mann-Whitney"),
+        "20": ("Where the days go: median days per funnel stage for filled reqs, overall vs G6+ (added at the Phase 9 "
+               "review)", "v_requisitions, v_candidates", "Mann-Whitney per stage"),
     }
     for hid, (h, d, t) in plan.items():
         hyp.append(f"| {hid} | {h} | {d} | {t} |")
