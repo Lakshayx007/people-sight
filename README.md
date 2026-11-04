@@ -18,8 +18,8 @@ cp .env.example .env                         # optional: add GROQ_API_KEY for As
 uvicorn backend.main:app --port 8000         # open http://localhost:8000
 ```
 
-Needs Python 3.11+ and Node 20.19+ (22 recommended). On Windows run `build.sh` from Git Bash, or run its six lines one by
-one. Without a Groq key everything works except Ask the Data, which says it needs a key.
+Needs Python 3.11+ and Node 20.19+ (22 recommended). On Windows, double-click `run_local.bat`: it finds Python, installs
+the requirements, builds the database and frontend if missing, and opens http://localhost:8000. Without a Groq key everything works except Ask the Data, which says it needs a key.
 
 Development: `uvicorn backend.main:app --reload --port 8000` and `cd frontend && npm run dev` (Vite proxies `/api`).
 

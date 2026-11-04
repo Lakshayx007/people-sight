@@ -1,0 +1,26 @@
+@echo off
+rem People Sight - run locally on Windows: finds Python 3.11+, installs requirements, builds the database if missing,
+rem builds the frontend if missing (needs Node), then serves http://localhost:8000
+setlocal
+cd /d "%~dp0"
+set "PY="
+for %%P in ("%USERPROFILE%\miniconda3\python.exe" "%USERPROFILE%\anaconda3\python.exe" "%LOCALAPPDATA%\Programs\Python\Python313\python.exe" "%LOCALAPPDATA%\Programs\Python\Python312\python.exe" "%LOCALAPPDATA%\Programs\Python\Python311\python.exe") do (
+  if not defined PY if exist %%P ( %%P -c "import sys; sys.exit(0 if sys.version_info >= (3, 11) else 1)" >/dev/null 2>/dev/null && set "PY=%%~P" )
+)
+if not defined PY ( python -c "import sys; sys.exit(0 if sys.version_info >= (3, 11) else 1)" >/dev/null 2>/dev/null && set "PY=python" )
+if not defined PY ( echo Python 3.11 or newer was not found. Install it from python.org and run this file again. & pause & exit /b 1 )
+echo Using Python: %PY%
+"%PY%" -m pip install --disable-pip-version-check -q -r backend\requirements.txt || ( echo Package install failed. & pause & exit /b 1 )
+if not exist data\people.duckdb (
+  echo Building the database from data\raw ...
+  "%PY%" pipeline\02_clean_enps.py && "%PY%" pipeline\03_clean_recruitment.py && "%PY%" pipeline\04_build_db.py || ( pause & exit /b 1 )
+)
+if not exist frontend\dist\index.html (
+  echo Building the frontend ...
+  pushd frontend && call npm ci && call npm run build & popd
+)
+echo.
+echo People Sight is running at http://localhost:8000  (close this window to stop it)
+start "" cmd /c "timeout /t 5 >nul & start http://localhost:8000/sentiment"
+"%PY%" -m uvicorn backend.main:app --host 127.0.0.1 --port 8000
+pause
