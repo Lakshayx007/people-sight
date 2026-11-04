@@ -111,7 +111,7 @@ def norm_grade(v):
 
 def grade_num(g):
     """'TBA' -> 0, 'G7' -> 7."""
-    if g is None:
+    if is_blank(g):
         return None
     return 0 if g == "TBA" else int(g[1:])
 

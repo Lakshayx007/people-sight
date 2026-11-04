@@ -346,7 +346,7 @@ r["is_valid"] = r["exclusion_reason"].isna()
 # derived
 r["nps_group"] = pd.cut(r["q1_clean"].astype(float), [-0.5, 6.5, 8.5, 10.5], labels=["Detractor", "Passive", "Promoter"]).astype(object)
 r["comment"] = r["Comments (optional)"].map(lambda v: None if is_blank(v) else str(v).strip())
-r["comment_theme"] = r["comment"].map(lambda c: None if c is None else COMMENT_THEMES.get(c, "Other"))
+r["comment_theme"] = r["comment"].map(lambda c: None if is_blank(c) else COMMENT_THEMES.get(c, "Other"))
 dq.log(RS, "Comments (optional)", f"{r['comment'].nunique()} repeated phrases", int(r["comment"].notna().sum()),
        "Mapped to themes Manager, Pay, Growth, Workload, Onboarding, Positive", "Phrase-to-theme mapping in 02_clean_enps.py (COMMENT_THEMES)")
 

@@ -65,7 +65,7 @@ s["submitted_date"] = s.submitted_on.dt.normalize()
 both_inv = set(emp.loc[emp.active_on_apr_open & emp.active_on_oct_open, "employee_id"])
 s["invited_both_waves"] = s.employee_id.isin(both_inv)
 s["responded_both_waves"] = s.in_panel
-s["exit_type_after_wave"] = s.exit_type.where(s.exited_after_wave)
+s["exit_type_after_wave"] = s.exit_type.where(s.exited_after_wave).astype(object).where(lambda x: x.notna(), None)
 s["regrettable_after_wave"] = s.exited_after_wave & s.is_regrettable_exit.astype("boolean").fillna(False).astype(bool)
 s["q1"] = s.q1_clean.astype(int)
 for g, col in [("Promoter", "is_promoter"), ("Passive", "is_passive"), ("Detractor", "is_detractor")]:
@@ -94,7 +94,7 @@ both_resp = set(s.loc[s.responded_both_waves, "employee_id"])
 inv["responded_both_waves"] = inv.employee_id.isin(both_resp)
 close = inv.wave.map(lambda w: WAVES[w]["close"])
 inv["exited_after_wave"] = (inv.date_of_exit.notna() & (inv.date_of_exit > close)) | (inv.exit_date_unknown & (inv.wave == "Apr"))
-inv["exit_type_after_wave"] = inv.exit_type.where(inv.exited_after_wave)
+inv["exit_type_after_wave"] = inv.exit_type.where(inv.exited_after_wave).astype(object).where(lambda x: x.notna(), None)
 inv["regrettable_after_wave"] = inv.exited_after_wave & inv.is_regrettable_exit.astype("boolean").fillna(False).astype(bool)
 INVITED_COLS = ["wave"] + SLICE_COLS + ["responded"]
 t_invited = inv[INVITED_COLS].reset_index(drop=True)
@@ -103,7 +103,8 @@ assert int(t_invited.responded.sum()) == len(t_survey)
 _chk = s.merge(inv[["employee_id", "wave"] + SLICE_COLS], on=["employee_id", "wave"], suffixes=("", "_inv"))
 assert len(_chk) == len(s)
 for _c in SLICE_COLS:
-    assert (_chk[_c].astype(str) == _chk[_c + "_inv"].astype(str)).all(), _c
+    a, b = _chk[_c], _chk[_c + "_inv"]
+    assert ((a == b) | (a.isna() & b.isna())).all(), _c
 
 # ── employees (no name) ──────────────────────────────────────────────────────
 t_employees = emp.drop(columns=["employee_name", "annual_ctc_raw"])
