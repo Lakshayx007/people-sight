@@ -184,10 +184,48 @@ def test_small_n_combo_suppressed(api):
 
 
 def test_misc_endpoints(api):
-    for url in ["/api/dq", "/api/dq/reconciliation", "/api/health", "/api/filters/options"]:
+    for url in ["/api/dq", "/api/dq/reconciliation", "/api/dq/summary", "/api/health", "/api/filters/options"]:
         r = api.get(url)
         assert r.status_code == 200
         check_shape(r.json())
     opts = {(o["dashboard"], o["key"]) for o in api.get("/api/filters/options").json()["data"]}
     assert ("enps", "manager_status") in opts and ("hiring", "source") in opts
     assert api.get("/api/does-not-exist").status_code == 404
+
+
+def test_dq_dataset_param(api):
+    all_n = api.get("/api/dq").json()["n"]
+    e, r = api.get("/api/dq?dataset=eNPS").json(), api.get("/api/dq?dataset=Recruitment").json()
+    assert e["n"] + r["n"] == all_n and all(x["dataset"] == "eNPS" for x in e["data"])
+    assert api.get("/api/dq?dataset=bogus").status_code == 422
+
+
+def test_open_aging_base_is_open_reqs(api):
+    j = api.post("/api/hiring/open-aging-buckets", json={}).json()
+    assert j["n"] == sum(x["open_reqs"] for x in j["data"])
+
+
+def test_survey_code_never_touches_names():
+    """Names live only in v_interviewers (hiring). Survey metrics must never reference it, v_employees or names."""
+    import inspect
+    from backend import metrics_enps
+    src = inspect.getsource(metrics_enps)
+    for banned in ("v_interviewers", "employee_name", "v_employees", "t_people_directory", "employee_id"):
+        assert banned not in src, banned
+
+
+def test_dq_summary_matches_log(api):
+    for ds in ["", "?dataset=eNPS", "?dataset=Recruitment"]:
+        sm = api.get(f"/api/dq/summary{ds}").json()["data"][0]
+        log = api.get(f"/api/dq{ds}").json()["data"]
+        assert sm["rules"] == len(log)
+        assert sm["issues_treated"] == sum(r["changed_data"] for r in log)
+        assert sm["checks_passed"] == sum(r["rows_affected"] == 0 for r in log)
+
+
+def test_recruiter_tables_follow_filters(api):
+    f = {"filters": {"recruiter": ["Rhea Kapoor"], "source": ["Agency"]}}
+    for ep in ["recruiters", "recruiter-comparison"]:
+        rows = api.post(f"/api/hiring/{ep}", json=f).json()["data"]
+        assert [r["recruiter"] for r in rows] == ["Rhea Kapoor"], ep
+        assert len(api.post(f"/api/hiring/{ep}", json={}).json()["data"]) == 8

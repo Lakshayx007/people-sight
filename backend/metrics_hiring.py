@@ -154,6 +154,7 @@ SELECT t.recruiter, t.recruiter_id, coalesce(rq.reqs, 0) AS reqs,
        round(coalesce(ac.acc_excl_bo, 0) / $months, 2) AS accepted_per_month_excl_bo,
        round(100.0 * coalesce(ac.acc_excl_bo, 0) / $months / t.monthly_offer_target, 1) AS attainment_excl_bo_pct
 FROM v_recruiters t LEFT JOIN rq USING (recruiter) LEFT JOIN ac USING (recruiter)
+WHERE coalesce(rq.reqs, 0) > 0
 ORDER BY reqs DESC"""
     return sql, merge(p, {"months": months})
 
@@ -179,6 +180,7 @@ SELECT t.recruiter, coalesce(rq.reqs_assigned, 0) AS reqs_assigned, coalesce(hc.
        coalesce(hc.offers_accepted, 0) AS offers_accepted,
        round(coalesce(hc.offers_accepted, 0) / nullif(rq.reqs_assigned, 0), 2) AS accepted_per_assigned_req
 FROM v_recruiters t LEFT JOIN rq USING (recruiter) LEFT JOIN hc USING (recruiter)
+WHERE coalesce(rq.reqs_assigned, 0) > 0
 ORDER BY reqs_assigned DESC"""
     return sql, p
 

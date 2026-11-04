@@ -76,8 +76,8 @@ def survey_n(w, extra: str = "", extra_params: dict | None = None):
     return f"SELECT count(*) FROM v_survey WHERE {w[0]}{extra}", {**w[1], **(extra_params or {})}
 
 
-def req_n(wr):
-    return f"SELECT count(*) FROM v_requisitions WHERE {wr[0]}", wr[1]
+def req_n(wr, extra: str = ""):
+    return f"SELECT count(*) FROM v_requisitions WHERE {wr[0]}{extra}", wr[1]
 
 
 def cand_n(wc, extra: str = ""):
@@ -160,7 +160,7 @@ def _h(body: Body):
 def _hiring_route(path: str, fn: Callable, base: str, extra: str = ""):
     def handler(body: Body = Body()):
         wr, wc = _h(body)
-        n_sql, n_params = req_n(wr) if base == "req" else cand_n(wc, extra)
+        n_sql, n_params = req_n(wr, extra) if base == "req" else cand_n(wc, extra)
         return respond(fn(wr, wc), n_sql, n_params)
     handler.__name__ = "hiring_" + path.strip("/").replace("-", "_")
     handler.__doc__ = fn.__doc__
@@ -171,8 +171,8 @@ for _path, _fn, _base, _extra in [
     ("kpis", H.kpis, "req", ""), ("monthly", H.monthly, "req", ""), ("funnel", H.funnel, "cand", ""),
     ("stage-time", H.stage_time, "cand", " AND NOT stage_dates_invalid"), ("source", H.source, "cand", ""),
     ("recruiters", H.recruiters, "req", ""), ("recruiter-comparison", H.recruiter_comparison, "req", ""), ("interviewers", H.interviewers, "cand", " AND r1_feedback_days IS NOT NULL"),
-    ("ttf-by-grade", H.ttf_by_grade, "req", ""), ("open-aging", H.open_aging, "req", ""),
-    ("open-aging-buckets", H.open_aging_buckets, "req", ""),
+    ("ttf-by-grade", H.ttf_by_grade, "req", ""), ("open-aging", H.open_aging, "req", " AND is_open"),
+    ("open-aging-buckets", H.open_aging_buckets, "req", " AND is_open"),
     ("offers", H.offers, "cand", " AND (is_offer_accepted OR is_offer_declined)"),
     ("offers-summary", H.offers_summary, "cand", " AND (is_offer_accepted OR is_offer_declined)"),
     ("sla-mismatch", H.sla_mismatch, "req", ""), ("sla-mismatch-list", H.sla_mismatch_list, "req", ""),
@@ -225,16 +225,40 @@ def filter_options():
     return {"data": data, "sql": OPTIONS_SQL.strip(), "n": len(data)}
 
 
+DQ_DATASET = Query(None, pattern="^(eNPS|Recruitment)$")
+
+
+def _dq_where(dataset):
+    return ("dataset = $dataset", {"dataset": dataset}) if dataset else ("TRUE", {})
+
+
 @app.get("/api/dq")
-def dq_log():
-    sql = "SELECT * FROM v_dq_log ORDER BY dataset, sheet, rows_affected DESC"
-    return {"data": db.query(sql), "sql": sql, "n": db.scalar("SELECT count(*) FROM v_dq_log")}
+def dq_log(dataset: str | None = DQ_DATASET):
+    where, params = _dq_where(dataset)
+    sql = (f"SELECT *, rows_affected > 0 AND treatment <> 'Validated' AS changed_data FROM v_dq_log WHERE {where} "
+           "ORDER BY dataset, sheet, rows_affected DESC")
+    full = db.annotate(sql, params)
+    return {"data": db.query(full, params), "sql": full, "n": db.scalar(f"SELECT count(*) FROM v_dq_log WHERE {where}", params)}
+
+
+@app.get("/api/dq/summary")
+def dq_summary(dataset: str | None = DQ_DATASET):
+    where, params = _dq_where(dataset)
+    sql = f"""SELECT (SELECT count(*) FROM v_dq_log WHERE {where}) AS rules,
+       (SELECT count(*) FROM v_dq_log WHERE {where} AND rows_affected > 0 AND treatment <> 'Validated') AS issues_treated,
+       (SELECT count(*) FROM v_dq_log WHERE {where} AND rows_affected = 0) AS checks_passed,
+       (SELECT count(DISTINCT dataset || '/' || sheet) FROM v_reconciliation WHERE {where}) AS sheets_reconciled"""
+    full = db.annotate(sql, params)
+    data = db.query(full, params)
+    return {"data": data, "sql": full, "n": data[0]["rules"]}
 
 
 @app.get("/api/dq/reconciliation")
-def dq_reconciliation():
-    sql = 'SELECT * FROM v_reconciliation ORDER BY dataset, sheet, "order"'
-    return {"data": db.query(sql), "sql": sql, "n": db.scalar("SELECT count(*) FROM v_reconciliation")}
+def dq_reconciliation(dataset: str | None = DQ_DATASET):
+    where, params = _dq_where(dataset)
+    sql = f'SELECT * FROM v_reconciliation WHERE {where} ORDER BY dataset, sheet, "order"'
+    full = db.annotate(sql, params)
+    return {"data": db.query(full, params), "sql": full, "n": db.scalar(f"SELECT count(*) FROM v_reconciliation WHERE {where}", params)}
 
 
 @app.get("/api/health")
