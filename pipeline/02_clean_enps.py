@@ -178,8 +178,8 @@ dq.log(EM, "Employment Status", f"'Active' but Date of Exit + Exit Type present 
 e.loc[act_exit, "employment_status"] = "Exited"
 ex_nodate = (e["employment_status"] == "Exited") & e["date_of_exit"].isna()
 e["exit_date_unknown"] = ex_nodate
-dq.log(EM, "Date of Exit", f"'Exited' but no exit date ({', '.join(e.loc[ex_nodate, 'employee_id'])})", int(ex_nodate.sum()),
-       "Kept Exited; exit date left blank, exit_date_unknown = true", "Without an exit date they count as active on both wave open dates and have no exit month")
+dq.log(EM, "Employment Status", f"'Exited' status kept although Date of Exit is blank ({', '.join(e.loc[ex_nodate, 'employee_id'])})", int(ex_nodate.sum()),
+       "Kept Exited; exit date left blank, exit_date_unknown = true (invitation rule: see 'Exited with missing exit date')", "Status Exited is authoritative")
 type_no_exit = int((e["exit_type"].notna() & (e["employment_status"] != "Exited")).sum())
 dq.log(EM, "Exit Type", "Exit Type present on a non-exited employee (after fixes)", type_no_exit, "Validated" if type_no_exit == 0 else "Flagged")
 late_exit = int((e["date_of_exit"] > AS_OF).sum())
@@ -238,6 +238,15 @@ for w, wd in WAVES.items():
     e[f"active_on_{key}_open"] = active_on(e["date_of_joining"], e["date_of_exit"], wd["open"])
     e[f"tenure_band_{key}"] = tenure_band(e["date_of_joining"], wd["open"])
 e["tenure_band_asof"] = tenure_band(e["date_of_joining"], AS_OF)
+# Exited with no exit date (user decision after Phase 3): exited before the October wave, date unknown.
+unk = e["exit_date_unknown"]
+e.loc[unk, "active_on_oct_open"] = False
+e.loc[unk, "active_on_apr_open"] = e.loc[unk, "date_of_joining"] <= WAVES["Apr"]["open"]
+e.loc[unk, ["tenure_days", "tenure_band_asof"]] = pd.NA
+dq.log(EM, "Date of Exit", f"Exited with missing exit date: {int(unk.sum())} rows; treated as exited before the October wave; exit date unknown ({', '.join(e.loc[unk, 'employee_id'])})",
+       int(unk.sum()), "Not in the October invited population; in April only if Date of Joining <= 06-Apr-2026 "
+       f"({int(e.loc[unk, 'active_on_apr_open'].sum())} of {int(unk.sum())}); tenure_days blank; April responses count as 'exited after wave'",
+       "Status Exited is authoritative; EMP15885 has a replacement req raised 04-Jul-2026, so they had left before October")
 in_win = e["manager_effective_from"].between(*MGR_WINDOW)
 e["manager_changed_literal"] = in_win          # backup only: literal the case brief rule, not used in charts
 changed_mgr = in_win & (e["manager_effective_from"] > e["date_of_joining"])
@@ -326,8 +335,7 @@ open_d = r["wave"].map(lambda w: WAVES[w]["open"])
 close_d = r["wave"].map(lambda w: WAVES[w]["close"]) + pd.Timedelta(days=1)
 inm = r["employee_id"].isin(emp.index)
 act = pd.Series(False, index=r.index)
-act[inm] = [bool(active_on(pd.Series([emp.at[i, "date_of_joining"]]), pd.Series([emp.at[i, "date_of_exit"]]), d).iloc[0])
-            for i, d in zip(r.loc[inm, "employee_id"], open_d[inm])]
+act[inm] = [bool(emp.at[i, f"active_on_{w.lower()}_open"]) for i, w in zip(r.loc[inm, "employee_id"], r.loc[inm, "wave"])]
 exclude(inm & ~act, "not_active_on_open_date", "Submitted On", "Respondent not active on the wave open date (joined after it or exited before it)", "Excluded", "Only invited employees count")
 outside = (r["submitted_on"] < open_d) | (r["submitted_on"] >= close_d)
 exclude(outside, "outside_window", "Submitted On", "Submitted outside the wave window", "Excluded")
@@ -349,7 +357,9 @@ SNAP = ["company", "thread", "function", "job_family", "grade", "grade_num", "lo
 for c in SNAP:
     r[c] = r["employee_id"].map(emp[c]) if c in emp.columns else None
 r["tenure_band"] = [emp.at[i, f"tenure_band_{w.lower()}"] if i in emp.index else None for i, w in zip(r["employee_id"], r["wave"])]
-r["exited_after_wave"] = r["date_of_exit"].notna() & (r["date_of_exit"] > r["wave"].map(lambda w: WAVES[w]["close"]))
+unk_ids = set(emp.index[emp["exit_date_unknown"]])
+r["exited_after_wave"] = (r["date_of_exit"].notna() & (r["date_of_exit"] > r["wave"].map(lambda w: WAVES[w]["close"]))) | \
+    (r["employee_id"].isin(unk_ids) & (r["wave"] == "Apr"))
 dq.log(RS, "(segment attributes)", "Attributes snapshotted at wave open date", int(r["is_valid"].sum()),
        "Tenure band computed at each wave's open date; thread/function/grade/location/rating/compa band taken from the current HRMS record",
        "The HRMS export has no attribute history, so current values stand in for the wave-date values")

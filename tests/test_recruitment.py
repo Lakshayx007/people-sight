@@ -141,3 +141,18 @@ def test_recruitment_reconciliation(rec):
 
 def test_dq_log_has_both_datasets(rec):
     assert {"eNPS", "Recruitment"} <= set(rec["dq"]["dataset"])
+
+
+def test_backed_out_never_hires(rec):
+    c, q = rec["cand"], rec["req"]
+    bo = c[c["is_backed_out"]]
+    assert not bo["is_hire"].any()
+    filled_bo = q[q["req_id"].isin(bo["req_id"]) & q["is_filled"]]
+    hires = c[c["is_hire"]].set_index("req_id")
+    assert (~hires.loc[filled_bo["req_id"], "is_backed_out"]).all()
+
+
+def test_agency_fee_only_joiners(rec):
+    c = rec["cand"]
+    yet = (c["source_clean"] == "Agency") & (c["candidate_status"] == "Offer Accepted - Yet to Join")
+    assert (c.loc[yet, "agency_fee_inr"] == 0).all()

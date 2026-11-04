@@ -141,6 +141,9 @@ def test_status_consistent_with_exit_date(enps):
     e = enps["emp"]
     assert not ((e["employment_status"] == "Active") & e["date_of_exit"].notna()).any()
     assert ((e["employment_status"] == "Exited") & e["date_of_exit"].isna()).sum() == e["exit_date_unknown"].sum()
+    unk = e[e["exit_date_unknown"]]
+    assert not unk["active_on_oct_open"].any()
+    assert (unk["active_on_apr_open"] == (unk["date_of_joining"] <= WAVES["Apr"]["open"])).all()
     assert (e["date_of_exit"].dropna() <= AS_OF).all()
 
 

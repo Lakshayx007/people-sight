@@ -370,9 +370,20 @@ dq.log(RQ, "SLA Status (System)", f"Blank on On Hold / Archived reqs ({q.loc[q.s
        int(q.sla_status_system.isna().sum()), "sla_status_recomputed also blank for On Hold / Archived (no SLA clock)", "SLA applies to filled and open reqs only")
 mm = q[q.sla_status_mismatch]
 pairs = (mm.sla_status_system.fillna("blank") + " -> " + pd.Series(mm.sla_status_recomputed, index=mm.index).fillna("blank")).value_counts().to_dict()
-dq.log(RQ, "SLA Status (System)", f"System status disagrees with recomputed status ({pairs})", len(mm),
-       "Recomputed status used in all metrics; system value kept as sla_status_system", "TTF = Offer Response On of the hired candidate - Req Raised On (README); the system marks these 'Within SLA' although TTF > SLA days, and no other date in the data explains it")
+over = (mm.ttf_days - mm.sla_days).dropna()
+dq.log(RQ, "SLA Status (System)", f"FINDING: system status disagrees with recomputed status ({pairs}); TTF overrun {int(over.min())}-{int(over.max())} days over SLA ({', '.join(mm.index)})", len(mm),
+       "Recomputed SLA status used everywhere (KPIs, charts, deck); system value kept only as sla_status_system for the mismatch panel", "TTF = Offer Response On of the hired candidate - Req Raised On (README); the system marks these 'Within SLA' although TTF > SLA days, and no other date in the data explains it")
 
+bo = c[c.is_backed_out].groupby("req_id").size()
+bo_out = q.loc[bo.index]
+refilled = bo_out.is_filled
+dq.log(RQ, "(derived) is_filled", f"Reqs with a backed-out candidate: {len(bo)} ({int(refilled.sum())} refilled by another candidate who joined or accepted; "
+       f"{int((~refilled).sum())} not refilled: {bo_out.loc[~refilled, 'req_status'].value_counts().to_dict()})", len(bo),
+       "Backed-out candidates are never hires; the req counts as filled only via another accepted / joined candidate")
+q["had_backout"] = q.index.isin(bo.index)
+parallel = [r_ for r_ in bo_out.index[refilled] if q.at[r_, "offer_accepted_on"] <= c.loc[c.is_backed_out & (c.req_id == r_), "offer_response_on"].max()]
+dq.log(RQ, "(derived) is_filled", f"Refilled reqs where the hire accepted on/before the backed-out candidate's acceptance (backup offer in parallel): {', '.join(parallel)}",
+       len(parallel), "No change: TTF always uses the hired candidate's acceptance date", "README: occasionally a backup offer runs in parallel")
 q = q.reset_index()
 dq.step(RQ, "rows out", len(q))
 
@@ -390,7 +401,8 @@ REQ_COLS = ["req_id", "req_raised_on", "raised_month", "thread", "function", "jo
             "criticality", "criticality_raw", "criticality_derived", "criticality_mismatch", "hiring_manager_id", "recruiter",
             "recruiter_id", "sla_days", "sla_expected", "sla_mismatch", "req_status", "budgeted_max_ctc", "hired_candidate_id",
             "hire_status", "hire_source", "offer_accepted_on", "hire_actual_doj", "ttf_days", "is_filled", "sla_met",
-            "age_days_as_of_31oct", "is_open", "open_breached", "sla_status_system", "sla_status_recomputed", "sla_status_mismatch"]
+            "age_days_as_of_31oct", "is_open", "open_breached", "sla_status_system", "sla_status_recomputed", "sla_status_mismatch",
+            "had_backout"]
 q = q[REQ_COLS]
 for col in ["replaced_in_master", "replaced_is_regrettable", "sla_met", "open_breached"]:
     q[col] = q[col].astype("boolean")
