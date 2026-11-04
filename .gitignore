@@ -30,3 +30,7 @@ reference/
 Thumbs.db
 .vscode/
 .idea/
+
+# git bundles used to move work between machines; temp trash
+*.bundle
+.nm_trash/
