@@ -194,3 +194,17 @@ def tenure_band(doj: pd.Series, on: pd.Timestamp) -> pd.Series:
 
 TENURE_BANDS = ["<6m", "6-12m", "1-2y", "2-4y", "4y+"]
 COMPA_BANDS = ["Below", "At", "Above", "Unknown"]
+
+
+# ── shared categorical rules ─────────────────────────────────────────────────
+THREADS = ["Intracity", "Intercity", "Enterprise", "Packers & Movers", "Geo Expansion", "Central"]
+_THREAD_KEY = {"intracity": "Intracity", "intercity": "Intercity", "enterprise": "Enterprise",
+               "packers&movers": "Packers & Movers", "packersandmovers": "Packers & Movers",
+               "p&m": "Packers & Movers", "geoexpansion": "Geo Expansion", "central": "Central"}
+
+
+def thread_clean(v):
+    """'Intra City', 'InterCity', 'P&M', 'Geo-Expansion', 'central ' -> one of THREADS (None if unknown)."""
+    if is_blank(v):
+        return None
+    return _THREAD_KEY.get(re.sub(r"[\s\-]", "", str(v).strip().lower()))

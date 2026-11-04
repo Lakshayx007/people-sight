@@ -22,7 +22,7 @@ import pandas as pd
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from common import (  # noqa: E402
     AS_OF, CLEAN_DIR, EMP_ID_RE, ENPS_FILE, WAVES, DQLog, active_on, date_format_of, grade_num,
-    is_blank, job_family, norm_emp_id, norm_grade, parse_date, parse_inr, tenure_band,
+    is_blank, job_family, norm_emp_id, norm_grade, parse_date, parse_inr, tenure_band, THREADS, thread_clean,
 )
 
 DS = "eNPS"
@@ -30,10 +30,6 @@ EM, RS, PB = "Employee_Master", "eNPS_Responses", "Pay_Bands"
 dq = DQLog(DS)
 
 # ── canonical values ─────────────────────────────────────────────────────────
-THREADS = ["Intracity", "Intercity", "Enterprise", "Packers & Movers", "Geo Expansion", "Central"]
-_THREAD_KEY = {"intracity": "Intracity", "intercity": "Intercity", "enterprise": "Enterprise",
-               "packers&movers": "Packers & Movers", "packersandmovers": "Packers & Movers",
-               "p&m": "Packers & Movers", "geoexpansion": "Geo Expansion", "central": "Central"}
 LOCATIONS = ["Bengaluru HO", "Bengaluru", "Ahmedabad", "Chennai", "Delhi NCR", "Hyderabad", "Jaipur",
              "Kolkata", "Lucknow", "Mumbai", "Pune"]
 _LOC_KEY = {"blr - ho": "Bengaluru HO", "bangalore ho": "Bengaluru HO", "bengaluru ho": "Bengaluru HO",
@@ -72,11 +68,6 @@ MGR_WINDOW = (pd.Timestamp("2026-04-18"), pd.Timestamp("2026-10-04"))
 MGR_CHANGED, MGR_FIRST, MGR_SAME = "Changed manager", "New joiner (first manager)", "Same manager"
 MANAGER_STATUSES = [MGR_CHANGED, MGR_FIRST, MGR_SAME]
 BAND_SET_DATE = pd.Timestamp("2026-04-01")   # band set effective on the as-of date
-
-
-def thread_clean(v):
-    k = re.sub(r"[\s\-]", "", str(v).strip().lower())
-    return _THREAD_KEY.get(k)
 
 
 def changed(before: pd.Series, after: pd.Series) -> int:

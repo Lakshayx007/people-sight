@@ -25,3 +25,17 @@ def enps():
         "dq": pd.read_csv(CLEAN / "dq_log.csv"),
         "recon": pd.read_csv(CLEAN / "reconciliation.csv"),
     }
+
+
+@pytest.fixture(scope="session")
+def rec(enps):  # depends on enps so employees.parquet exists first
+    _ensure("03_clean_recruitment.py", ["requisitions.parquet", "candidates.parquet", "recruiters.parquet", "people_directory.parquet"])
+    return {
+        "req": pd.read_parquet(CLEAN / "requisitions.parquet"),
+        "cand": pd.read_parquet(CLEAN / "candidates.parquet"),
+        "excl": pd.read_parquet(CLEAN / "candidates_excluded.parquet"),
+        "rc": pd.read_parquet(CLEAN / "recruiters.parquet"),
+        "pdir": pd.read_parquet(CLEAN / "people_directory.parquet"),
+        "dq": pd.read_csv(CLEAN / "dq_log.csv"),
+        "recon": pd.read_csv(CLEAN / "reconciliation.csv"),
+    }
