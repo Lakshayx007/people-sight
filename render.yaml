@@ -1,0 +1,24 @@
+# One Render web service: FastAPI serves the API and the built React app (same origin, no CORS).
+services:
+  - type: web
+    name: porter-people-analytics
+    runtime: python
+    plan: free
+    region: singapore
+    buildCommand: ./build.sh
+    startCommand: uvicorn backend.main:app --host 0.0.0.0 --port $PORT --proxy-headers --forwarded-allow-ips "*"
+    healthCheckPath: /api/health
+    autoDeploy: true
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.13"
+      - key: NODE_VERSION
+        value: "22"
+      - key: GROQ_API_KEY
+        sync: false          # set in the Render dashboard; never committed
+      - key: GROQ_MODEL
+        value: openai/gpt-oss-120b
+      - key: GROQ_CACHE_TTL
+        value: "600"
+      - key: AI_RATE_PER_MIN
+        value: "10"

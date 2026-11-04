@@ -12,6 +12,10 @@ Run locally:  uvicorn backend.main:app --reload --port 8000
 from __future__ import annotations
 
 import logging
+import os
+import threading
+import time
+from collections import defaultdict, deque
 from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Any, Callable
@@ -19,6 +23,7 @@ from typing import Any, Callable
 from dotenv import load_dotenv
 from fastapi import FastAPI, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
@@ -45,7 +50,64 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(title="Porter People Analytics API", version="1.0.0", lifespan=lifespan)
-app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
+
+# ── hardening ────────────────────────────────────────────────────────────────
+# The built frontend is served by this same app, so production needs no CORS. Set CORS_ORIGINS (comma-separated) only
+# if the frontend is hosted elsewhere.
+_origins = [o.strip() for o in os.getenv("CORS_ORIGINS", "").split(",") if o.strip()]
+if _origins:
+    app.add_middleware(CORSMiddleware, allow_origins=_origins, allow_methods=["GET", "POST"], allow_headers=["*"])
+app.add_middleware(GZipMiddleware, minimum_size=1000)
+
+MAX_BODY_BYTES = int(os.getenv("MAX_BODY_BYTES", str(256 * 1024)))
+AI_RATE_PER_MIN = int(os.getenv("AI_RATE_PER_MIN", "10"))     # per client IP, for the two Groq-backed endpoints
+AI_PATHS = {"/api/ask", "/api/chart-insight"}
+_hits: dict[str, deque] = defaultdict(deque)
+_hits_lock = threading.Lock()
+
+
+def _client_ip(request: Request) -> str:
+    fwd = request.headers.get("x-forwarded-for", "")
+    return fwd.split(",")[0].strip() if fwd else (request.client.host if request.client else "unknown")
+
+
+def rate_limited(key: str, limit: int, window: float = 60.0) -> bool:
+    """Sliding-window limiter (in memory; one Render instance). True when the call should be refused."""
+    now = time.monotonic()
+    with _hits_lock:
+        q = _hits[key]
+        while q and now - q[0] > window:
+            q.popleft()
+        if len(q) >= limit:
+            return True
+        q.append(now)
+        return False
+
+
+@app.middleware("http")
+async def guard_and_headers(request: Request, call_next):
+    if request.method == "POST":
+        try:
+            size = int(request.headers.get("content-length", "0"))
+        except ValueError:
+            size = 0
+        if size > MAX_BODY_BYTES:
+            return JSONResponse(status_code=413, content={"detail": "Request too large."})
+        if request.url.path in AI_PATHS and rate_limited(f"{_client_ip(request)}|ai", AI_RATE_PER_MIN):
+            return JSONResponse(status_code=429, content={
+                "detail": "Too many AI requests from this browser. Please wait a minute and try again."})
+    response = await call_next(request)
+    path = request.url.path
+    if path.startswith("/assets/"):
+        response.headers["Cache-Control"] = "public, max-age=31536000, immutable"   # hashed file names
+    elif not path.startswith("/api/"):
+        response.headers["Cache-Control"] = "no-cache"                               # index.html: always fresh
+    else:
+        response.headers["Cache-Control"] = "no-store"
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    response.headers["X-Frame-Options"] = "DENY"
+    return response
 
 
 @app.exception_handler(FilterError)

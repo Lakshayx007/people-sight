@@ -7,6 +7,9 @@ from pathlib import Path
 import pandas as pd
 import pytest
 
+pytest.importorskip("scipy", reason="analysis extras not installed (pip install -r requirements-analysis.txt)")
+pytest.importorskip("matplotlib", reason="analysis extras not installed")
+
 ROOT = Path(__file__).resolve().parents[1]
 
 

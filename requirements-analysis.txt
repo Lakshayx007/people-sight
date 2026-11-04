@@ -1,0 +1,8 @@
+# Phase 9 analysis (pipeline/05_insights.py: statistics + deck charts) and the submission PDFs. Not needed to run the app.
+-r backend/requirements.txt
+scipy==1.18.1
+matplotlib==3.11.2
+markdown==3.11
+playwright
+Pillow
+pypdf==6.17.0
