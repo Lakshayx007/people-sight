@@ -3,6 +3,12 @@ rem People Sight - run locally on Windows: finds Python 3.11+, installs requirem
 rem builds the frontend if missing (needs Node), then serves http://localhost:8000
 setlocal
 cd /d "%~dp0"
+rem Show output live and keep a copy in run_local.log (for troubleshooting)
+if /i not "%~1"=="--logged" (
+  powershell -NoProfile -ExecutionPolicy Bypass -Command "& cmd /c '""%~f0"" --logged' 2>&1 | Tee-Object -FilePath 'run_local.log'"
+  pause
+  exit /b
+)
 set "PY="
 echo Looking for Python 3.11 or newer ...
 call :try "%LOCALAPPDATA%\Programs\Python\Python313\python.exe"

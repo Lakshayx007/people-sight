@@ -34,3 +34,4 @@ Thumbs.db
 # local transfer bundles
 *.bundle
 .nm_trash/
+run_local.log
