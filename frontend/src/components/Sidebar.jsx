@@ -23,7 +23,7 @@ export default function Sidebar({ open, onClose, onAsk }) {
             </div>
             <div>
               <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted">Porter</div>
-              <div className="text-sm font-bold leading-tight">People Analytics</div>
+              <div className="text-sm font-bold leading-tight">People Sight</div>
             </div>
           </div>
           <button onClick={onClose} className="rounded-md p-1 text-muted hover:text-primary lg:hidden" aria-label="Close menu">

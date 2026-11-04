@@ -926,7 +926,7 @@ for f in FINDINGS:
 ranked = sorted([f for f in FINDINGS if f["score"] is not None], key=lambda f: -f["score"])
 # overlapping findings: keep the strongest of each overlap group in the deck list
 OVERLAP = [{"F2b", "F6", "F19"}, {"F3", "F3a"}]
-DECK_ADDED = ["F7", "F16", "F20"]           # added at the Phase 9 review (user decision), on top of the top 8
+DECK_ADDED = ["F7", "F16", "F20"]           # added at the Phase 9 review, on top of the top 8
 deck, used = [], set()
 for f in ranked:
     if f["id"] in DECK_ADDED:

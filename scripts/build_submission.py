@@ -30,7 +30,7 @@ from pypdf import PdfReader
 
 ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / "submission"
-PLACEHOLDER = "https://<your-service>.onrender.com"
+PLACEHOLDER = "https://people-sight.onrender.com (pending deploy)"
 
 CSS = """
 @page { size: A4; margin: 12mm; }
@@ -85,7 +85,7 @@ def dashboards_pdf(browser, base: str, live: str) -> Path:
     warn = ('<p class="warn">Live URL not set yet — re-run <code>python scripts/build_submission.py --url '
             '&lt;render-url&gt;</code> after deploying.</p>' if placeholder else "")
     a4_aspect = (297 - 24 - 14) / (210 - 24)          # printable height / width, minus a caption line
-    parts = [f"""<h1>Porter People Analytics — Dashboards</h1>
+    parts = [f"""<h1>People Sight — Porter People Analytics Dashboards</h1>
 <p class="muted">Employee Sentiment (eNPS) and Hiring dashboards in one web app · data as of 31-Oct-2026 ·
 generated {date.today():%d-%b-%Y}</p>{warn}
 <table class="links">

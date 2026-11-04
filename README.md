@@ -1,18 +1,18 @@
-# Porter People Analytics
+# People Sight
 
-Two dashboards in one web app — **Employee Sentiment (eNPS)** and **Hiring** — plus a **Data Quality** page and an
+Porter People Analytics: two dashboards in one web app — **Employee Sentiment (eNPS)** and **Hiring** — plus a **Data Quality** page and an
 **Ask the Data** panel that turns a plain-English question into one read-only SQL query, a chart and the SQL itself.
 Built for the Porter People Analytics intern case study. Every number on screen comes from SQL over one DuckDB file
 built by a reproducible pipeline, and every chart can show the exact SQL behind it.
 
-- Live: **Sentiment** `https://<your-service>.onrender.com/sentiment` · **Hiring** `https://<your-service>.onrender.com/hiring`
-  · Data quality `/data-quality` (each route works as a direct link)
-- Repository: `https://github.com/<you>/<repo>` (add after pushing)
+- Live: **Sentiment** https://people-sight.onrender.com/sentiment · **Hiring** https://people-sight.onrender.com/hiring
+  · **Data quality** https://people-sight.onrender.com/data-quality (each route works as a direct link)
+- Repository: https://github.com/Lakshayx007/people-sight
 
 ## Run locally (4 commands)
 
 ```bash
-git clone <repo-url> && cd <repo>
+git clone https://github.com/Lakshayx007/people-sight.git && cd people-sight
 ./build.sh                                   # installs Python packages, rebuilds data/people.duckdb, builds the frontend
 cp .env.example .env                         # optional: add GROQ_API_KEY for Ask the Data
 uvicorn backend.main:app --port 8000         # open http://localhost:8000

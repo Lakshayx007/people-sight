@@ -31,6 +31,6 @@ Thumbs.db
 .vscode/
 .idea/
 
-# git bundles used to move work between machines; temp trash
+# local transfer bundles and scratch folders
 *.bundle
 .nm_trash/

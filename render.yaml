@@ -1,7 +1,7 @@
 # One Render web service: FastAPI serves the API and the built React app (same origin, no CORS).
 services:
   - type: web
-    name: porter-people-analytics
+    name: people-sight
     runtime: python
     plan: free
     region: singapore
