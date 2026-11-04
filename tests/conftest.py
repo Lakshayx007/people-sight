@@ -39,3 +39,22 @@ def rec(enps):  # depends on enps so employees.parquet exists first
         "dq": pd.read_csv(CLEAN / "dq_log.csv"),
         "recon": pd.read_csv(CLEAN / "reconciliation.csv"),
     }
+
+
+@pytest.fixture(scope="session")
+def db(rec):
+    import duckdb
+    if not (ROOT / "data" / "people.duckdb").exists():
+        subprocess.run([sys.executable, str(ROOT / "pipeline" / "04_build_db.py")], check=True)
+    sys.path.insert(0, str(ROOT))
+    con = duckdb.connect(str(ROOT / "data" / "people.duckdb"), read_only=True)
+    yield con
+    con.close()
+
+
+@pytest.fixture(scope="session")
+def q(db):
+    def run(fn, *a, **k):
+        sql, params = fn(*a, **k)
+        return db.execute(sql, params).df()
+    return run
