@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import re
 import logging
 import os
 import time
@@ -37,6 +38,10 @@ class AIRateLimited(Exception):
 
 class AIBadOutput(Exception):
     """The model did not return valid JSON."""
+
+
+class AIJsonRejected(Exception):
+    """Groq's JSON mode rejected the model's output; the caller retries in plain text."""
 
 
 def model_name() -> str:
@@ -91,7 +96,7 @@ def _create(client, **kw):
                 kw.pop("reasoning_effort")
                 continue
             if "json_validate_failed" in msg:
-                raise AIBadOutput("model output was not valid JSON") from e
+                raise AIJsonRejected("model output was not valid JSON") from e
             raise AIBadOutput(f"Groq rejected the request ({msg[:160]})") from e
         except RateLimitError as e:
             if attempt == 2:
@@ -124,17 +129,49 @@ def chat_json(messages: list[dict], max_tokens: int = 3000) -> dict:
     client = _client()
     if client is None:
         raise AIUnavailable("GROQ_API_KEY is not set")
-    resp = _create(client, model=model_name(), messages=messages, temperature=0, max_tokens=max_tokens,
-                   response_format={"type": "json_object"}, **_extra())
-    text = (resp.choices[0].message.content or "").strip()
     try:
-        out = json.loads(text)
-    except json.JSONDecodeError as e:
-        raise AIBadOutput("model did not return JSON") from e
-    if not isinstance(out, dict):
-        raise AIBadOutput("model did not return a JSON object")
+        resp = _create(client, model=model_name(), messages=messages, temperature=0, max_tokens=max_tokens,
+                       response_format={"type": "json_object"}, **_extra())
+    except AIJsonRejected:
+        # JSON mode occasionally rejects a reasoning model's output; ask again without it and parse the object
+        resp = _create(client, model=model_name(), messages=messages, temperature=0, max_tokens=max_tokens, **_extra())
+    out = _parse_object((resp.choices[0].message.content or "").strip())
     _cache_set(key, out)
     return out
+
+
+def _parse_object(text: str) -> dict:
+    """The JSON object in a reply (tolerates code fences or a sentence around it)."""
+    try:
+        out = json.loads(text)
+    except json.JSONDecodeError:
+        start, end = text.find("{"), text.rfind("}")
+        if start < 0 or end <= start:
+            raise AIBadOutput("model did not return JSON") from None
+        try:
+            out = json.loads(text[start:end + 1])
+        except json.JSONDecodeError as e:
+            raise AIBadOutput("model did not return JSON") from e
+    if not isinstance(out, dict):
+        raise AIBadOutput("model did not return a JSON object")
+    return out
+
+
+def chat_text(messages: list[dict], max_tokens: int = 1200) -> str:
+    """Plain-text answer (no JSON mode). Cached by message content."""
+    key = _key("text", model_name(), messages)
+    cached = _cache_get(key)
+    if cached is not None:
+        return cached
+    client = _client()
+    if client is None:
+        raise AIUnavailable("GROQ_API_KEY is not set")
+    resp = _create(client, model=model_name(), messages=messages, temperature=0, max_tokens=max_tokens, **_extra())
+    text = (resp.choices[0].message.content or "").strip()
+    if not text:
+        raise AIBadOutput("the model returned an empty answer")
+    _cache_set(key, text)
+    return text
 
 
 BLURB_SYSTEM = """You explain ONE dashboard chart to a busy manager who is not a data analyst.
@@ -145,7 +182,14 @@ Write 2-3 short, clear sentences:
   3) one caution or next question (small groups, few answers, or what to look at next).
 Rules: use ONLY numbers that appear in the rows or the provided summary; never invent or compute new numbers; no
 jargon (no "n", "segment", "metric"); never name or guess individuals; if a row is marked suppressed say the group is
-too small to show; do not use em dashes. Return JSON: {"blurb": "<2-3 sentences>"}"""
+too small to show; do not use em dashes. Reply with the 2-3 sentences only: no heading, no bullet points, no quotes."""
+
+
+def _tidy(text: str) -> str:
+    """One short paragraph: no markdown, quotes or em dashes."""
+    t = re.sub(r"[*_#`]+", "", text).strip().strip('"').strip()
+    t = re.sub(r"\s*\n+\s*", " ", t).replace(" — ", ", ").replace("—", ", ")
+    return t or "No summary returned."
 
 
 def chart_blurb(title: str, rows: list[dict], context: str = "") -> str:
@@ -155,10 +199,10 @@ def chart_blurb(title: str, rows: list[dict], context: str = "") -> str:
     payload = json.dumps(rows[:40], default=str)[:4000]
     try:
         ctx = f"\nWhat the chart is about: {context[:600]}" if context else ""
-        out = chat_json([{"role": "system", "content": BLURB_SYSTEM},
-                         {"role": "user", "content": f"Chart title: {title}{ctx}\nRows (JSON): {payload}"}],
-                        max_tokens=1200)
-        return str(out.get("blurb", "")).strip() or "No summary returned."
+        text = chat_text([{"role": "system", "content": BLURB_SYSTEM},
+                          {"role": "user", "content": f"Chart title: {title}{ctx}\nRows (JSON): {payload}"}],
+                         max_tokens=1200)
+        return _tidy(text)
     except AIRateLimited:
         return "Groq is busy (rate limit). Try again in a minute."
     except (AIUnavailable, AIBadOutput) as e:
