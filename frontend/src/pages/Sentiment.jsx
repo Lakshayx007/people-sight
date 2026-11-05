@@ -1,6 +1,8 @@
 import { useCallback, useMemo, useState } from 'react';
 import { Activity, MessageSquare, TrendingDown, Users } from 'lucide-react';
 import FilterBar from '../components/FilterBar';
+import PageHeader from '../components/PageHeader';
+import KeyTakeaways from '../components/KeyTakeaways';
 import PinnedAnswers from '../components/PinnedAnswers';
 import Metric from '../components/Metric';
 import Panel from '../components/Panel';
@@ -65,13 +67,14 @@ export default function Sentiment() {
   const opt = { mobile };
 
   return (
-    <div className="mx-auto max-w-[1400px] space-y-4 p-3 sm:p-4 lg:p-6">
-      <div>
-        <h1 className="text-lg font-bold sm:text-xl">Employee sentiment</h1>
-        <p className="text-xs text-muted">eNPS pulse surveys, April vs October 2026. Click any bar, dot or cell to drill down; every chart shows its SQL.</p>
-      </div>
+    <div className="mx-auto max-w-[1400px] space-y-5 p-3 sm:p-5 lg:p-8">
+      <PageHeader eyebrow="Employee sentiment" title="How do people feel about working at Porter?">
+        Two pulse surveys, April and October 2026. eNPS asks how likely people are to recommend Porter as a place to work: % who would (9–10) minus % who would not (0–6). Click any bar, dot or cell to focus on that group.
+      </PageHeader>
 
       <FilterBar />
+
+      <KeyTakeaways endpoint="/enps/takeaways" />
 
       {/* KPI row */}
       <section className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
@@ -116,7 +119,7 @@ export default function Sentiment() {
         <Panel className="lg:col-span-7"
           title={`eNPS by ${dimLabel.toLowerCase()}: April vs October`}
           subtitle="Grey = April, blue = October; the line shows the change. Click a row to filter to it."
-          n={seg.n} insightRows={seg.data} sql={seg.sql} loading={seg.loading} error={seg.error} empty={empty(seg)}
+          n={seg.n} insightRows={seg.data} takeaway={seg.takeaway} sql={seg.sql} loading={seg.loading} error={seg.error} empty={empty(seg)}
           badges={lowSegs.length ? <LowResponseBadge detail={lowSegs.map((r) => `${r.segment} ${fmtPct(r.low_response_oct ? r.response_rate_oct_pct : r.response_rate_apr_pct, 0)}`).join(', ')} /> : null}
           actions={(
             <select value={dim} onChange={(e) => setDim(e.target.value)} aria-label="Break down by"
@@ -130,14 +133,14 @@ export default function Sentiment() {
         <Panel className="lg:col-span-5"
           title="Driver scores: % favourable, April vs October"
           subtitle="Share answering 4 or 5 on each 1–5 question; mean score and n in the tooltip."
-          n={drivers.n} insightRows={drivers.data} sql={drivers.sql} loading={drivers.loading} error={drivers.error} empty={empty(drivers)}>
+          n={drivers.n} insightRows={drivers.data} takeaway={drivers.takeaway} sql={drivers.sql} loading={drivers.loading} error={drivers.error} empty={empty(drivers)}>
           {(h) => drivers.data && <EChart option={driversOption(drivers.data, p, opt)} height={h} />}
         </Panel>
 
         <Panel className="lg:col-span-7"
           title={`eNPS by thread × function (${hmWave === 'Oct' ? 'October' : 'April'})`}
           subtitle="Red = negative, blue = positive eNPS; grey n<5 = fewer than 5 respondents; blank = no employees in that combination (corporate functions sit in Central). Click a cell to drill down."
-          n={heat.n} insightRows={heat.data} sql={heat.sql} loading={heat.loading} error={heat.error} empty={empty(heat)}
+          n={heat.n} insightRows={heat.data} takeaway={heat.takeaway} sql={heat.sql} loading={heat.loading} error={heat.error} empty={empty(heat)}
           actions={(
             <select value={hmWave} onChange={(e) => setHmWave(e.target.value)} aria-label="Wave"
               className="h-6 rounded-md border border-border bg-surface px-1.5 text-[11px] font-medium outline-none">
@@ -155,14 +158,14 @@ export default function Sentiment() {
         <Panel className="lg:col-span-5"
           title="Which drivers matter most? Importance vs score (October)"
           subtitle="Right = more strongly linked to eNPS; low = lower score. Dashed lines = average of the five drivers."
-          n={imp.n} insightRows={imp.data} sql={imp.sql} loading={imp.loading} error={imp.error} empty={empty(imp) || (imp.data && imp.data.every((r) => r.suppressed))}>
+          n={imp.n} insightRows={imp.data} takeaway={imp.takeaway} sql={imp.sql} loading={imp.loading} error={imp.error} empty={empty(imp) || (imp.data && imp.data.every((r) => r.suppressed))}>
           {(h) => imp.data && <EChart option={quadrantOption(imp.data, p)} height={h} />}
         </Panel>
 
         <Panel className="lg:col-span-4"
           title="Promoters, passives and detractors by wave"
           subtitle="Share of respondents per group; click a wave to filter."
-          n={byWave.n} insightRows={byWave.data} sql={byWave.sql} loading={byWave.loading} error={byWave.error} empty={empty(byWave)}
+          n={byWave.n} insightRows={byWave.data} takeaway={byWave.takeaway} sql={byWave.sql} loading={byWave.loading} error={byWave.error} empty={empty(byWave)}
           badges={(byWave.data || []).filter((r) => r.low_response).map((r) => <LowResponseBadge key={r.wave} detail={`${r.wave} ${fmtPct(r.response_rate_pct, 0)}`} />)}>
           {(h) => byWave.data && <EChart option={mixOption(byWave.data, p)} height={h} onClick={onMixClick} />}
         </Panel>
@@ -170,14 +173,14 @@ export default function Sentiment() {
         <Panel className="lg:col-span-4"
           title="Comment themes: % of respondents, by wave"
           subtitle="Comments grouped into six themes."
-          n={themes.n} insightRows={themes.data} sql={themes.sql} loading={themes.loading} error={themes.error} empty={empty(themes)}>
+          n={themes.n} insightRows={themes.data} takeaway={themes.takeaway} sql={themes.sql} loading={themes.loading} error={themes.error} empty={empty(themes)}>
           {(h) => themes.data && <EChart option={themesOption(themes.data, p)} height={h} />}
         </Panel>
 
         <Panel className="lg:col-span-4"
           title="April respondents who exited by 31-Oct, by April group"
           subtitle="Share of each April group who later left."
-          n={exits.n} insightRows={exits.data} nLabel="n Apr" sql={exits.sql} loading={exits.loading} error={exits.error} empty={empty(exits)}>
+          n={exits.n} insightRows={exits.data} takeaway={exits.takeaway} nLabel="n Apr" sql={exits.sql} loading={exits.loading} error={exits.error} empty={empty(exits)}>
           {(h) => exits.data && <EChart option={exitsOption(exits.data, p)} height={h} />}
         </Panel>
 
@@ -186,7 +189,7 @@ export default function Sentiment() {
           subtitle={nAll && isNum(nAll.apr_enps_oct_respondents)
             ? `People invited to both waves who answered in April. Overall, those who skipped October scored ${fmtSigned(nAll.apr_enps_oct_nonrespondents)} in April (n = ${fmtInt(nAll.n_oct_nonrespondents)}) vs ${fmtSigned(nAll.apr_enps_oct_respondents)} for those who answered again (n = ${fmtInt(nAll.n_oct_respondents)}). A lower grey bar means October eNPS is flattered by who chose to answer.`
             : 'People invited to both waves who answered in April.'}
-          n={nrb.n} insightRows={nrb.data} nLabel="n eligible" sql={nrb.sql} loading={nrb.loading} error={nrb.error} empty={empty(nrb)}
+          n={nrb.n} insightRows={nrb.data} takeaway={nrb.takeaway} nLabel="n eligible" sql={nrb.sql} loading={nrb.loading} error={nrb.error} empty={empty(nrb)}
           badges={lowNrb.length ? <LowResponseBadge detail={lowNrb.map((r) => `${r.segment} ${fmtPct(r.oct_response_rate_pct, 0)} answered Oct`).join(', ')} /> : null}>
           {(h) => nrb.data && <EChart option={nonResponseOption(nrb.data, p, opt)} height={h} onClick={onNrbClick} />}
         </Panel>

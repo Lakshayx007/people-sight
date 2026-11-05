@@ -28,7 +28,7 @@ from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
-from backend import ai_service, ask, db
+from backend import ai_service, ask, db, narrative
 from backend import metrics_enps as E
 from backend import metrics_hiring as H
 from backend.filters import FilterError, build_where
@@ -126,10 +126,20 @@ class Body(BaseModel):
     filters: dict[str, Any] = Field(default_factory=dict)
 
 
-def respond(metric: tuple[str, dict], n_sql: str, n_params: dict) -> dict:
+def respond(metric: tuple[str, dict], n_sql: str, n_params: dict, endpoint: str | None = None,
+            ctx: dict | None = None) -> dict:
+    """{data, sql, n} plus `takeaway`: one plain-language sentence written by code from the same rows (or null)."""
     sql, params = metric
     full = db.annotate(sql, params)
-    return {"data": db.query(full, params), "sql": full, "n": db.scalar(n_sql, n_params)}
+    data = db.query(full, params)
+    return {"data": data, "sql": full, "n": db.scalar(n_sql, n_params),
+            "takeaway": narrative.takeaway(endpoint, data, ctx) if endpoint else None}
+
+
+def run(metric: tuple[str, dict]) -> tuple[list[dict], str]:
+    sql, params = metric
+    full = db.annotate(sql, params)
+    return db.query(full, params), full
 
 
 # ── base counts (n) ──────────────────────────────────────────────────────────
@@ -161,7 +171,7 @@ def enps_kpis(body: Body = Body()):
 @app.post("/api/enps/by-wave")
 def enps_by_wave(body: Body = Body()):
     w = _w(body)
-    return respond(E.by_wave(w), *survey_n(w))
+    return respond(E.by_wave(w), *survey_n(w), endpoint="enps/by-wave")
 
 
 @app.post("/api/enps/panel")
@@ -173,44 +183,47 @@ def enps_panel(body: Body = Body()):
 @app.post("/api/enps/segment")
 def enps_segment(body: Body = Body(), dim: str = Query("thread")):
     w = _w(body)
-    return respond(E.segment(dim, w), *survey_n(w))
+    return respond(E.segment(dim, w), *survey_n(w), endpoint="enps/segment", ctx={"dim": dim})
 
 
 @app.post("/api/enps/drivers")
 def enps_drivers(body: Body = Body()):
     w = _w(body)
-    return respond(E.drivers(w), *survey_n(w))
+    return respond(E.drivers(w), *survey_n(w), endpoint="enps/drivers")
 
 
 @app.post("/api/enps/driver-importance")
 def enps_driver_importance(body: Body = Body(), wave: str = Query("Oct", pattern="^(Apr|Oct)$")):
     w = _w(body)
-    return respond(E.driver_importance(w, wave), *survey_n(w, " AND wave = $n_wave", {"n_wave": wave}))
+    return respond(E.driver_importance(w, wave), *survey_n(w, " AND wave = $n_wave", {"n_wave": wave}),
+                   endpoint="enps/driver-importance")
 
 
 @app.post("/api/enps/heatmap")
 def enps_heatmap(body: Body = Body(), row: str = Query("thread"), col: str = Query("function"),
                  wave: str = Query("Oct", pattern="^(Apr|Oct)$")):
     w = _w(body)
-    return respond(E.heatmap(row, col, w, wave), *survey_n(w, " AND wave = $n_wave", {"n_wave": wave}))
+    return respond(E.heatmap(row, col, w, wave), *survey_n(w, " AND wave = $n_wave", {"n_wave": wave}),
+                   endpoint="enps/heatmap")
 
 
 @app.post("/api/enps/themes")
 def enps_themes(body: Body = Body()):
     w = _w(body)
-    return respond(E.themes(w), *survey_n(w))
+    return respond(E.themes(w), *survey_n(w), endpoint="enps/themes")
 
 
 @app.post("/api/enps/respondents-who-exited")
 def enps_respondents_who_exited(body: Body = Body()):
     w = _w(body)
-    return respond(E.respondents_who_exited(w), *survey_n(w, " AND wave = 'Apr'"))
+    return respond(E.respondents_who_exited(w), *survey_n(w, " AND wave = 'Apr'"), endpoint="enps/respondents-who-exited")
 
 
 @app.post("/api/enps/non-response-bias")
 def enps_non_response_bias(body: Body = Body(), dim: str | None = Query(None)):
     w = _w(body)
-    return respond(E.non_response_bias(dim, w), *survey_n(w, " AND wave = 'Apr' AND invited_both_waves"))
+    return respond(E.non_response_bias(dim, w), *survey_n(w, " AND wave = 'Apr' AND invited_both_waves"),
+                   endpoint="enps/non-response-bias" if dim else None)
 
 
 # ── Hiring ───────────────────────────────────────────────────────────────────
@@ -223,7 +236,7 @@ def _hiring_route(path: str, fn: Callable, base: str, extra: str = ""):
     def handler(body: Body = Body()):
         wr, wc = _h(body)
         n_sql, n_params = req_n(wr, extra) if base == "req" else cand_n(wc, extra)
-        return respond(fn(wr, wc), n_sql, n_params)
+        return respond(fn(wr, wc), n_sql, n_params, endpoint=f"hiring/{path}")
     handler.__name__ = "hiring_" + path.strip("/").replace("-", "_")
     handler.__doc__ = fn.__doc__
     app.post(f"/api/hiring/{path}")(handler)
@@ -241,6 +254,65 @@ for _path, _fn, _base, _extra in [
     ("backfill", H.backfill, "req", ""),
 ]:
     _hiring_route(_path, _fn, _base, _extra)
+
+
+# ── Plain-language summaries ─────────────────────────────────────────────────
+TAKEAWAY_DIMS = ["manager_status", "thread", "tenure_band", "function"]
+
+
+def _enps_page(w) -> tuple[list[dict], str]:
+    k, s1 = run(E.kpis(w))
+    pn, s2 = run(E.panel(w))
+    segs, sqls = {}, [s1, s2]
+    for d in TAKEAWAY_DIMS:
+        segs[d], sq = run(E.segment(d, w))
+        sqls.append(sq)
+    dr, s3 = run(E.drivers(w))
+    sqls.append(s3)
+    return narrative.page_takeaways_enps(k[0] if k else {}, pn[0] if pn else {}, segs, dr), ";\n\n".join(sqls)
+
+
+def _hiring_page(wr, wc) -> tuple[list[dict], str]:
+    k, s1 = run(H.kpis(wr, wc))
+    g, s2 = run(H.ttf_by_grade(wr, wc))
+    o, s3 = run(H.offers(wr, wc))
+    i, s4 = run(H.interviewers(wr, wc))
+    return narrative.page_takeaways_hiring(k[0] if k else {}, g, o, i), ";\n\n".join([s1, s2, s3, s4])
+
+
+@app.post("/api/enps/takeaways")
+def enps_takeaways(body: Body = Body()):
+    """Three plain-language headline bullets for the Sentiment page (written by code from the metric SQL)."""
+    w = _w(body)
+    data, sql = _enps_page(w)
+    return {"data": data, "sql": sql, "n": db.scalar(*survey_n(w))}
+
+
+@app.post("/api/hiring/takeaways")
+def hiring_takeaways(body: Body = Body()):
+    """Three plain-language headline bullets for the Hiring page."""
+    wr, wc = _h(body)
+    data, sql = _hiring_page(wr, wc)
+    return {"data": data, "sql": sql, "n": db.scalar(*req_n(wr))}
+
+
+@app.get("/api/home")
+def home():
+    """Headline numbers and plain-language findings for the landing page (unfiltered)."""
+    from backend.sql_common import ALL
+    k, s1 = run(E.kpis(ALL))
+    pn, s2 = run(E.panel(ALL))
+    hk, s3 = run(H.kpis(ALL, ALL))
+    enps_cards, s4 = _enps_page(ALL)
+    hire_cards, s5 = _hiring_page(ALL, ALL)
+    dq_sql = ("SELECT count(*) AS rules, count(*) FILTER (WHERE rows_affected > 0 AND treatment <> 'Validated') "
+              "AS issues_treated FROM v_dq_log")
+    dq = db.query(dq_sql)[0]
+    row = {**(k[0] if k else {}), "panel_n": (pn[0] if pn else {}).get("n"),
+           "panel_change": (pn[0] if pn else {}).get("enps_change"),
+           **{f"h_{key}": v for key, v in (hk[0] if hk else {}).items()}, **dq,
+           "findings": [dict(c, area="Sentiment") for c in enps_cards[1:]] + [dict(c, area="Hiring") for c in hire_cards[1:]]}
+    return {"data": [row], "sql": ";\n\n".join([s1, s2, s3, s4, s5, dq_sql]), "n": row.get("n")}
 
 
 # ── Ask the Data ─────────────────────────────────────────────────────────────
@@ -268,12 +340,14 @@ def ask_status():
 class InsightBody(BaseModel):
     title: str = Field(..., max_length=200)
     rows: list[dict[str, Any]] = Field(default_factory=list)
+    context: str = Field("", max_length=1200)   # the panel subtitle + plain-language takeaway
 
 
 @app.post("/api/chart-insight")
 def chart_insight(body: InsightBody):
     """Two-sentence blurb written by Groq only from the rows the panel already shows (Hard rule 9)."""
-    return {"data": [{"insight": ai_service.chart_blurb(body.title, body.rows)}], "sql": "", "n": len(body.rows)}
+    return {"data": [{"insight": ai_service.chart_blurb(body.title, body.rows, body.context)}], "sql": "",
+            "n": len(body.rows)}
 
 
 # ── filter options, data quality, health ─────────────────────────────────────
@@ -346,6 +420,16 @@ def dq_summary(dataset: str | None = DQ_DATASET):
     full = db.annotate(sql, params)
     data = db.query(full, params)
     return {"data": data, "sql": full, "n": data[0]["rules"]}
+
+
+@app.get("/api/dq/stories")
+def dq_stories(dataset: str | None = DQ_DATASET):
+    """The cleaning log grouped into a few plain-language cards (counts summed from v_dq_log)."""
+    where, params = _dq_where(dataset)
+    sql = f"SELECT dataset, sheet, \"column\", issue, rows_affected, treatment FROM v_dq_log WHERE {where}"
+    full = db.annotate(sql, params)
+    rows = db.query(full, params)
+    return {"data": narrative.dq_stories(rows), "sql": full, "n": len(rows)}
 
 
 @app.get("/api/dq/reconciliation")

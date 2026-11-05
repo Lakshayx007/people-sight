@@ -137,20 +137,27 @@ def chat_json(messages: list[dict], max_tokens: int = 3000) -> dict:
     return out
 
 
-BLURB_SYSTEM = """You write a two-sentence plain-English summary of ONE dashboard chart for HR leaders.
-Use ONLY the rows given. Do not add numbers that are not in the rows, do not speculate about causes,
-do not mention individuals. If a row is marked suppressed (n<5), say it is hidden for privacy.
-Return JSON: {"blurb": "<two sentences>"}"""
+BLURB_SYSTEM = """You explain ONE dashboard chart to a busy manager who is not a data analyst.
+Write 2-3 short sentences in plain English:
+  1) what the chart shows, in everyday words (say "eNPS — how likely people are to recommend Porter as a place to
+     work" the first time you use the term);
+  2) the single most important thing it reveals;
+  3) one caution or next question (small groups, few answers, or what to look at next).
+Rules: use ONLY numbers that appear in the rows or the provided summary; never invent or compute new numbers; no
+jargon (no "n", "segment", "metric"); never name or guess individuals; if a row is marked suppressed say the group is
+too small to show. Return JSON: {"blurb": "<2-3 sentences>"}"""
 
 
-def chart_blurb(title: str, rows: list[dict]) -> str:
+def chart_blurb(title: str, rows: list[dict], context: str = "") -> str:
     """Short description of a chart, written only from the rows the API already returned."""
     if not available():
         return "AI summaries need a Groq API key (GROQ_API_KEY). The chart and its SQL are unaffected."
     payload = json.dumps(rows[:40], default=str)[:4000]
     try:
+        ctx = f"\nWhat the chart is about: {context[:600]}" if context else ""
         out = chat_json([{"role": "system", "content": BLURB_SYSTEM},
-                         {"role": "user", "content": f"Chart title: {title}\nRows (JSON): {payload}"}], max_tokens=1200)
+                         {"role": "user", "content": f"Chart title: {title}{ctx}\nRows (JSON): {payload}"}],
+                        max_tokens=1200)
         return str(out.get("blurb", "")).strip() or "No summary returned."
     except AIRateLimited:
         return "Groq is busy (rate limit). Try again in a minute."

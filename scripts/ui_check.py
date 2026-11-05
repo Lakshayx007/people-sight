@@ -14,6 +14,8 @@ CLICK_JS = """([title, series, idx]) => {
   const px = inst.convertToPixel({seriesIndex: series}, Array.isArray(v) ? v : [v, idx]);
   const r = dom.getBoundingClientRect(); return {x: r.left + px[0], y: r.top + px[1]};
 }"""
+SCROLL_JS = """(title) => { const h = [...document.querySelectorAll('h3')].find(e => e.textContent.startsWith(title));
+  h.closest('section').scrollIntoView({block:'center'}); }"""
 async def main():
     async with async_playwright() as p:
         b = await p.chromium.launch(); pg = await b.new_page(viewport={"width":1366,"height":900})
@@ -21,11 +23,13 @@ async def main():
         async def idle(): await pg.wait_for_load_state("networkidle"); await pg.wait_for_timeout(900)
         await pg.goto(B+"/sentiment"); await idle()
         # heatmap cell click (series 0, first non-suppressed cell)
+        await pg.evaluate(SCROLL_JS, "eNPS by thread × function"); await pg.wait_for_timeout(900)
         xy = await pg.evaluate(CLICK_JS, ["eNPS by thread × function", 0, 0]); await pg.mouse.click(xy["x"], xy["y"]); await idle()
         print("heatmap drill ->", pg.url.split("?")[1])
         # breadcrumb: back to all employees
         await pg.get_by_role("button", name="All employees").click(); await idle(); print("breadcrumb reset ->", pg.url)
         # mix chart: click October bar (promoters series index 2, data index 1)
+        await pg.evaluate(SCROLL_JS, "Promoters, passives"); await pg.wait_for_timeout(900)
         xy = await pg.evaluate(CLICK_JS, ["Promoters, passives", 2, 1]); await pg.mouse.click(xy["x"]-20, xy["y"]); await idle()
         print("mix drill ->", pg.url.split("?")[1] if "?" in pg.url else pg.url)
         # chip remove

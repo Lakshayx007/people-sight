@@ -10,7 +10,7 @@ export const api = axios.create({ baseURL: '/api', timeout: 30000 });
  */
 export function useApi(path, { filters = {}, params = {}, method = 'post', enabled = true } = {}) {
   const key = `${method}|${path}|${JSON.stringify(params)}|${JSON.stringify(filters)}`;
-  const [state, setState] = useState({ data: null, sql: '', n: null, loading: true, error: null });
+  const [state, setState] = useState({ data: null, sql: '', n: null, takeaway: null, loading: true, error: null });
 
   useEffect(() => {
     if (!enabled) return undefined;
@@ -20,10 +20,10 @@ export function useApi(path, { filters = {}, params = {}, method = 'post', enabl
       ? api.get(path, { params, signal: ctrl.signal })
       : api.post(path, { filters }, { params, signal: ctrl.signal });
     req
-      .then((r) => setState({ data: r.data.data, sql: r.data.sql, n: r.data.n, loading: false, error: null }))
+      .then((r) => setState({ data: r.data.data, sql: r.data.sql, n: r.data.n, takeaway: r.data.takeaway || null, loading: false, error: null }))
       .catch((e) => {
         if (axios.isCancel(e) || e.name === 'CanceledError') return;
-        setState({ data: null, sql: '', n: null, loading: false, error: e.response?.data?.detail || e.message });
+        setState({ data: null, sql: '', n: null, takeaway: null, loading: false, error: e.response?.data?.detail || e.message });
       });
     return () => ctrl.abort();
     // eslint-disable-next-line react-hooks/exhaustive-deps

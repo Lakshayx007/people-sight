@@ -42,7 +42,7 @@ def combos(options, dash, k=5, seed=7):
 
 
 def check_shape(j):
-    assert set(j) == {"data", "sql", "n"}
+    assert {"data", "sql", "n"} <= set(j) <= {"data", "sql", "n", "takeaway"}
     assert isinstance(j["data"], list) and isinstance(j["sql"], str) and isinstance(j["n"], int)
 
 

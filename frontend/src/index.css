@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&display=swap');
 @import "tailwindcss";
 
 /* Design tokens (adapted from Onco-Sight). One accent colour; negative and warning are status colours only. */
@@ -15,6 +15,9 @@
   --color-warn: var(--warn);
   --color-warn-soft: var(--warn-soft);
   --font-sans: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-display: 'Fraunces', Georgia, 'Times New Roman', serif;
+  --color-ink: var(--ink);
+  --color-ink-soft: var(--ink-soft);
 }
 
 :root {
@@ -29,6 +32,8 @@
   --neg: #DC2626;
   --warn: #B45309;
   --warn-soft: #FEF3C7;
+  --ink: #0B1220;
+  --ink-soft: #1E293B;
   color-scheme: light;
 }
 
@@ -44,6 +49,8 @@
   --neg: #F87171;
   --warn: #FBBF24;
   --warn-soft: #3B2F12;
+  --ink: #05080F;
+  --ink-soft: #111827;
   color-scheme: dark;
 }
 
@@ -62,3 +69,20 @@
 .tabular-nums { font-variant-numeric: tabular-nums; }
 
 pre.sql { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 11px; line-height: 1.55; }
+
+/* ── design system additions (People Sight) ───────────────────────────────── */
+.font-display { font-family: var(--font-display); letter-spacing: -0.01em; }
+.card { @apply rounded-2xl border border-border bg-surface shadow-[0_1px_2px_rgba(16,24,40,.04),0_8px_24px_-12px_rgba(16,24,40,.08)]; }
+.skeleton {
+  background: linear-gradient(90deg, var(--subtle) 0%, color-mix(in srgb, var(--bord) 70%, transparent) 50%, var(--subtle) 100%);
+  background-size: 200% 100%; animation: shimmer 1.4s ease-in-out infinite; border-radius: 10px;
+}
+@keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+@media (prefers-reduced-motion: reduce) { .skeleton { animation: none; } }
+:focus-visible { outline: 2px solid var(--acc); outline-offset: 2px; border-radius: 6px; }
+.hero-grid {
+  background-image: linear-gradient(to right, rgba(255,255,255,.06) 1px, transparent 1px),
+                    linear-gradient(to bottom, rgba(255,255,255,.06) 1px, transparent 1px);
+  background-size: 48px 48px;
+  mask-image: radial-gradient(ellipse 80% 70% at 50% 40%, #000 40%, transparent 100%);
+}

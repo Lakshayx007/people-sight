@@ -1,6 +1,8 @@
 import { useCallback } from 'react';
 import { Briefcase, CheckCircle2, Clock, FolderOpen, Handshake, IndianRupee, Info, Timer, UserCheck, Users } from 'lucide-react';
 import FilterBar from '../components/FilterBar';
+import PageHeader from '../components/PageHeader';
+import KeyTakeaways from '../components/KeyTakeaways';
 import PinnedAnswers from '../components/PinnedAnswers';
 import Metric from '../components/Metric';
 import Panel from '../components/Panel';
@@ -62,13 +64,14 @@ export default function Hiring() {
   })();
 
   return (
-    <div className="mx-auto max-w-[1400px] space-y-4 p-3 sm:p-4 lg:p-6">
-      <div>
-        <h1 className="text-lg font-bold sm:text-xl">Hiring</h1>
-        <p className="text-xs text-muted">Requisitions raised 01-Apr to 15-Oct-2026, status as of 31-Oct-2026. SLA status is recomputed from the README definition. Click bars, rows or grades to drill down.</p>
-      </div>
+    <div className="mx-auto max-w-[1400px] space-y-5 p-3 sm:p-5 lg:p-8">
+      <PageHeader eyebrow="Hiring" title="How fast and how well is Porter hiring?">
+        Job openings raised 01-Apr to 15-Oct-2026, status as of 31-Oct-2026. Time to fill counts from the day an opening is raised to the day the hire accepts. Click bars, rows or grades to focus on them.
+      </PageHeader>
 
       <FilterBar />
+
+      <KeyTakeaways endpoint="/hiring/takeaways" />
 
       <section className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-5">
         <Metric label="Reqs raised" icon={Briefcase} loading={loadingK} value={fmtInt(k.reqs_raised)}
@@ -103,31 +106,31 @@ export default function Hiring() {
       <section className="grid grid-cols-1 gap-4 lg:grid-cols-12">
         <Panel className="lg:col-span-7" title="Reqs raised vs offers accepted vs joins, by month"
           subtitle="Reqs by month raised; offers by month accepted; joins by month joined. Click a month to filter to reqs raised then."
-          n={monthly.n} insightRows={monthly.data} nLabel="n reqs" sql={monthly.sql} loading={monthly.loading} error={monthly.error} empty={empty(monthly)}>
+          n={monthly.n} insightRows={monthly.data} takeaway={monthly.takeaway} nLabel="n reqs" sql={monthly.sql} loading={monthly.loading} error={monthly.error} empty={empty(monthly)}>
           {(h) => monthly.data && <EChart option={monthlyOption(monthly.data, p)} height={h} onClick={onMonth} />}
         </Panel>
 
         <Panel className="lg:col-span-5" title="Candidate funnel by stage"
           subtitle="Label = candidates · % of the previous stage (log scale so late stages stay visible)."
-          n={funnel.n} insightRows={funnel.data} nLabel="n candidates" sql={funnel.sql} loading={funnel.loading} error={funnel.error} empty={empty(funnel)}>
+          n={funnel.n} insightRows={funnel.data} takeaway={funnel.takeaway} nLabel="n candidates" sql={funnel.sql} loading={funnel.loading} error={funnel.error} empty={empty(funnel)}>
           {(h) => funnel.data && <EChart option={funnelOption(funnel.data, p, opt)} height={h} />}
         </Panel>
 
         <Panel className="lg:col-span-7" title="Median time to fill by grade vs SLA"
           subtitle="Bars = median days from req raised to offer accepted (red = above SLA); dashed line = SLA; label = % filled within SLA. Click a grade to drill down."
-          n={grade.n} insightRows={grade.data} nLabel="n reqs" sql={grade.sql} loading={grade.loading} error={grade.error} empty={empty(grade) || (grade.data && grade.data.every((r) => !r.filled))}>
+          n={grade.n} insightRows={grade.data} takeaway={grade.takeaway} nLabel="n reqs" sql={grade.sql} loading={grade.loading} error={grade.error} empty={empty(grade) || (grade.data && grade.data.every((r) => !r.filled))}>
           {(h) => grade.data && <EChart option={ttfGradeOption(grade.data, p)} height={h} onClick={onGrade} />}
         </Panel>
 
         <Panel className="lg:col-span-5" title="Where the days go: median days per stage"
           subtitle="Between consecutive stage dates (valid order only). Response → join is mostly the notice period."
-          n={stage.n} insightRows={stage.data} nLabel="n candidates" sql={stage.sql} loading={stage.loading} error={stage.error} empty={empty(stage)}>
+          n={stage.n} insightRows={stage.data} takeaway={stage.takeaway} nLabel="n candidates" sql={stage.sql} loading={stage.loading} error={stage.error} empty={empty(stage)}>
           {(h) => stage.data && <EChart option={stageTimeOption(stage.data, p)} height={h} />}
         </Panel>
 
         <Panel className="lg:col-span-12" title="Source effectiveness: volume, conversion, speed and cost by source" height={0}
           subtitle="Hire = candidate who filled a req (joined or yet to join). Agency cost per joiner = 8.33% fees ÷ agency joiners. Click a row to filter."
-          n={source.n} insightRows={source.data} nLabel="n candidates" sql={source.sql} loading={source.loading} error={source.error} empty={empty(source)}>
+          n={source.n} insightRows={source.data} takeaway={source.takeaway} nLabel="n candidates" sql={source.sql} loading={source.loading} error={source.error} empty={empty(source)}>
           {() => source.data && (
             <DataTable rows={source.data} rowKey={(r) => r.source} onRowClick={(r) => drill({ source: r.source })}
               defaultSort={{ key: 'applicants', dir: 'desc' }}
@@ -145,7 +148,7 @@ export default function Hiring() {
 
         <Panel className="lg:col-span-12" title="Recruiters: fair comparison per assigned req, plus attainment vs target" height={0}
           subtitle="Compare recruiters on the per-req columns (filled %, median TTF, % within SLA, accepted offers per req). Attainment = accepted offers per month (Apr–Oct, 7 months) ÷ monthly target, shown counting all accepted offers and excluding backed-out candidates. Click a row to filter."
-          n={fair.n} insightRows={fair.data} nLabel="n reqs" sql={fair.sql} loading={fair.loading || attain.loading} error={fair.error || attain.error} empty={empty(fair)}
+          n={fair.n} insightRows={fair.data} takeaway={fair.takeaway} nLabel="n reqs" sql={fair.sql} loading={fair.loading || attain.loading} error={fair.error || attain.error} empty={empty(fair)}
           footer={<p className="mt-2 text-[11px] leading-4 text-muted"><b>Note:</b> attainment depends on how many reqs a recruiter is given — a recruiter with few reqs cannot reach a fixed monthly offer target, so low attainment can mean low load rather than low performance.</p>}>
           {() => fair.data && (
             <DataTable rows={recruiterRows} dense rowKey={(r) => r.recruiter} onRowClick={(r) => drill({ recruiter: r.recruiter })}
@@ -167,26 +170,26 @@ export default function Hiring() {
 
         <Panel className="lg:col-span-7" title="15 slowest R1 interviewers: median days to submit feedback" height={340}
           subtitle="Interviewers with at least 5 interviews with feedback; red = median over 2 days. Names from People_Directory (hiring data only)."
-          n={iv.n} insightRows={iv.data} nLabel="n interviews" sql={iv.sql} loading={iv.loading} error={iv.error} empty={empty(iv)}>
+          n={iv.n} insightRows={iv.data} takeaway={iv.takeaway} nLabel="n interviews" sql={iv.sql} loading={iv.loading} error={iv.error} empty={empty(iv)}>
           {(h) => iv.data && <EChart option={interviewersOption(iv.data, p, opt)} height={h} />}
         </Panel>
 
         <Panel className="lg:col-span-5" title="Offer declines by offered ÷ expected CTC" height={300}
           subtitle="Share of offers declined in each band of offered CTC relative to what the candidate expected."
-          n={offers.n} insightRows={offers.data} nLabel="n offers" sql={offers.sql} loading={offers.loading} error={offers.error} empty={empty(offers)}
+          n={offers.n} insightRows={offers.data} takeaway={offers.takeaway} nLabel="n offers" sql={offers.sql} loading={offers.loading} error={offers.error} empty={empty(offers)}
           footer={offerTxt && <p className="mt-2 text-[11px] leading-4 text-muted">{offerTxt}</p>}>
           {(h) => offers.data && <EChart option={offersOption(offers.data, p)} height={h} />}
         </Panel>
 
         <Panel className="lg:col-span-5" title="Open reqs on 31-Oct: how far past SLA" height={300}
           subtitle="Age of each open req (31-Oct − raised) compared with its SLA days."
-          n={aging.n} insightRows={aging.data} nLabel="n open reqs" sql={aging.sql} loading={aging.loading} error={aging.error} empty={empty(aging)}>
+          n={aging.n} insightRows={aging.data} takeaway={aging.takeaway} nLabel="n open reqs" sql={aging.sql} loading={aging.loading} error={aging.error} empty={empty(aging)}>
           {(h) => aging.data && <EChart option={agingOption(aging.data, p)} height={h} />}
         </Panel>
 
         <Panel className="lg:col-span-7" title="SLA status: ATS system vs recomputed" height={300}
           subtitle="The recomputed status (TTF ≤ SLA days; open reqs breached when age > SLA) is used everywhere. Highlighted rows disagree with the ATS."
-          n={slaPairs.n} nLabel="n reqs" sql={slaPairs.sql} loading={slaPairs.loading || slaList.loading} error={slaPairs.error || slaList.error} empty={empty(slaPairs)}>
+          n={slaPairs.n} nLabel="n reqs" takeaway={slaPairs.takeaway} sql={slaPairs.sql} loading={slaPairs.loading || slaList.loading} error={slaPairs.error || slaList.error} empty={empty(slaPairs)}>
           {() => slaPairs.data && (
             <div className="space-y-3">
               <DataTable rows={slaPairs.data} dense highlight={(r) => r.mismatch} rowKey={(r) => `${r.system_status}-${r.recomputed_status}`}

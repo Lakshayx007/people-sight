@@ -9,6 +9,17 @@ built by a reproducible pipeline, and every chart can show the exact SQL behind 
   · **Data quality** https://people-sight.onrender.com/data-quality (each route works as a direct link)
 - Repository: https://github.com/Lakshayx007/people-sight
 
+## What's inside
+
+- **Landing page** (`/`): the headline numbers and findings in plain words, with links into each dashboard.
+- **Employee sentiment** (`/sentiment`) and **Hiring** (`/hiring`): filters, drill-down, and on every chart a one-line
+  "what this shows" sentence written by code from the same data (`backend/narrative.py`), plus an optional
+  "What does this chart say?" AI explanation (Groq, written only from the chart's rows). Three plain-language takeaways
+  at the top of each page follow the filters.
+- **Data quality** (`/data-quality`): what was fixed and why it matters, raw → clean row counts, and the full cleaning
+  log for auditors.
+- **Ask the Data**: plain English → one read-only SQL query → chart, with the SQL shown.
+
 ## Run locally (4 commands)
 
 ```bash
