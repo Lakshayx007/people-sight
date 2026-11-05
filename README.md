@@ -1,149 +1,128 @@
 # People Sight
 
-Porter People Analytics: two dashboards in one web app — **Employee Sentiment (eNPS)** and **Hiring** — plus a **Data Quality** page and an
-**Ask the Data** panel that turns a plain-English question into one read-only SQL query, a chart and the SQL itself.
-Built for the Porter People Analytics intern case study. Every number on screen comes from SQL over one DuckDB file
-built by a reproducible pipeline, and every chart can show the exact SQL behind it.
+**People analytics for Porter — how employees feel and how well we hire, explained in plain language.**
 
-- Live: **Sentiment** https://people-sight.onrender.com/sentiment · **Hiring** https://people-sight.onrender.com/hiring
-  · **Data quality** https://people-sight.onrender.com/data-quality (each route works as a direct link)
-- Repository: https://github.com/Lakshayx007/people-sight
+People Sight brings the April and October 2026 employee pulse surveys and the requisition-to-joining hiring data into
+one place. Every chart states what it shows in a sentence, every number can be traced to the query behind it, and
+anyone can ask their own question in plain English.
 
-## What's inside
+![People Sight](docs/screenshots/landing.png)
 
-- **Landing page** (`/`): the headline numbers and findings in plain words, with links into each dashboard.
-- **Employee sentiment** (`/sentiment`) and **Hiring** (`/hiring`): filters, drill-down, and on every chart a one-line
-  "what this shows" sentence written by code from the same data (`backend/narrative.py`), plus an optional
-  "What does this chart say?" AI explanation (Groq, written only from the chart's rows). Three plain-language takeaways
-  at the top of each page follow the filters.
-- **Data quality** (`/data-quality`): what was fixed and why it matters, raw → clean row counts, and the full cleaning
-  log for auditors.
-- **Ask the Data**: plain English → one read-only SQL query → chart, with the SQL shown.
-
-## Run locally (4 commands)
-
-```bash
-git clone https://github.com/Lakshayx007/people-sight.git && cd people-sight
-./build.sh                                   # installs Python packages, rebuilds data/people.duckdb, builds the frontend
-cp .env.example .env                         # optional: add GROQ_API_KEY for Ask the Data
-uvicorn backend.main:app --port 8000         # open http://localhost:8000
-```
-
-Needs Python 3.11+ and Node 20.19+ (22 recommended). On Windows, double-click `run_local.bat`: it finds Python, installs
-the requirements, builds the database and frontend if missing, and opens http://localhost:8000. Without a Groq key everything works except Ask the Data, which says it needs a key.
-
-Development: `uvicorn backend.main:app --reload --port 8000` and `cd frontend && npm run dev` (Vite proxies `/api`).
-
-Tests: `pytest tests` (cleaning, metrics vs independent pandas, every API endpoint with random filters,
-Ask the Data guard / validator, hardening, insights). The insights tests need `pip install -r requirements-analysis.txt`
-and are skipped otherwise.
-
-## What is where
-
-| Path | What |
+| | |
 |---|---|
-| `data/raw/` | The two workbooks as received — never modified |
-| `pipeline/` | `01_profile.py` → `analysis/profile.md`; `02_clean_enps.py`, `03_clean_recruitment.py` → `data/clean/*.parquet` + `dq_log.csv`; `04_build_db.py` → `data/people.duckdb`; `check_metrics.py` → `analysis/metric_reference.md`; `05_insights.py` → `analysis/insights.md`, charts, DQ note; `06_build_deck.py` → `analysis/Porter_People_Insights.pptx` + `deck_number_trace.md` |
-| `backend/` | FastAPI: `filters.py` (the only filter → SQL code), `metrics_enps.py` / `metrics_hiring.py` (one function per metric, returns SQL), `db.py` (read-only DuckDB), `ask.py` + `ai_service.py` (Ask the Data) |
-| `frontend/` | React 19 + Vite + Tailwind v4 + ECharts: pages Sentiment, Hiring, Data Quality; Ask panel |
-| `tests/` | pytest suites (see above) |
-| `analysis/` | profile, metric reference, hypotheses, insights, charts, insight deck and its number trace, DQ note, Ask-the-Data test log, screenshots |
-| `scripts/` | screenshots, UI checks, Ask-the-Data evaluation, submission pack builder |
-| `submission/` | `01_Dashboards.pdf` (links, how to use, full-page screenshots), `02_Insight_Deck.pptx` / `.pdf` (12 slides for the CHRO and TA Head), `03_Data_Quality_Note.pdf` (one page), `04_Working.zip` (code, tests, cleaning log, profile) |
-| `render.yaml`, `build.sh` | One Render web service: build = `build.sh`, start = uvicorn |
+| **Dashboards** | [Overview](https://people-sight.onrender.com) · [Employee sentiment](https://people-sight.onrender.com/sentiment) · [Hiring](https://people-sight.onrender.com/hiring) · [Data quality](https://people-sight.onrender.com/data-quality) |
+| **Insights** | [Findings and recommendations](docs/insights.md) · [Leadership deck](docs/Porter_People_Insights.pptx) · [Data quality note](docs/data_quality.md) |
+| **Data** | Sample dataset, as of 31-Oct-2026 |
 
-## Analysis outputs
+---
 
-Run after the database is built (`pip install -r requirements-analysis.txt` first):
+## What it answers
+
+**For the CHRO** — Would our people recommend Porter as a place to work, which groups have moved, and why? Which
+levers (manager feedback, pay, workload, onboarding, growth) matter most, and who is likely to leave?
+
+**For the TA Head** — How long does it take to fill a role, which roles miss their target, where do the days go, and
+where do we lose candidates — at interview, at offer, or by source?
+
+## Key findings
+
+- **The fall in eNPS is concentrated, not company-wide.** It sits in teams that changed manager during the June
+  Intercity reorganisation and in new joiners; colleagues with the same manager look like the rest of the company.
+- **Onboarding is the weakest experience for newcomers**, in both survey waves.
+- **Detractors leave.** People who were unhappy in April resigned far more often than promoters by October.
+- **Slow interview feedback costs candidates.** Withdrawals after the first interview cluster with two interviewers
+  who take far longer than everyone else to respond.
+- **Low offers are declined.** Offers well below the candidate's expectation are declined several times as often, and
+  most had room in the approved budget.
+- **Senior roles miss their hiring target** — the time goes into finding candidates, not into interviews.
+
+Every figure, test and caveat is in [docs/insights.md](docs/insights.md); the [leadership deck](docs/Porter_People_Insights.pptx)
+carries the top findings with a [number trace](docs/deck_number_trace.md) back to that document.
+
+## The product
+
+<table>
+<tr>
+<td width="50%"><img src="docs/screenshots/sentiment.png" alt="Employee sentiment dashboard"></td>
+<td width="50%"><img src="docs/screenshots/hiring.png" alt="Hiring dashboard"></td>
+</tr>
+<tr>
+<td><b>Employee sentiment</b> — eNPS and driver scores by wave, segment, team and tenure; who skipped the October survey; how sentiment links to exits.</td>
+<td><b>Hiring</b> — time to fill against target by grade, the funnel and stage times, sources and agency cost, recruiter load, interviewer feedback speed, offers and open-role ageing.</td>
+</tr>
+<tr>
+<td><img src="docs/screenshots/ask-the-data.png" alt="Ask the Data"></td>
+<td><img src="docs/screenshots/data-quality.png" alt="Data quality"></td>
+</tr>
+<tr>
+<td><b>Ask the Data</b> — a question in plain English becomes one read-only query, a chart and a one-line explanation, with the query shown.</td>
+<td><b>Data quality</b> — what was fixed before analysis and why it matters, raw-to-clean row counts, and the full cleaning log.</td>
+</tr>
+</table>
+
+- **Plain language throughout.** Each chart opens with a one-sentence takeaway written from the same data, and each page
+  starts with three headline points that update with the filters.
+- **AI on request.** "What does this chart say?" gives a short explanation for non-analysts, written only from the
+  numbers on the chart.
+- **Explore and verify.** Filters and drill-down on every chart, the exact SQL behind each one, and a base count (n)
+  on every figure.
+- **Privacy by design.** Survey answers carry no names or employee IDs, groups under five people are hidden, and
+  questions about a named person's survey answers are refused.
+
+## How it works
+
+```
+Raw workbooks ──► Cleaning pipeline ──► Clean tables + cleaning log ──► DuckDB (documented views)
+                                                                              │
+             Dashboards ◄── API (one filter layer, every response with its SQL) ◄┘
+                  │
+                  └── Plain-language takeaways (code)  ·  Chart explanations and Ask the Data (LLM writes queries only)
+```
+
+- **One source of truth.** A single pipeline cleans the workbooks and logs every rule; one database serves the
+  dashboards, the insights and the deck, so the numbers always agree.
+- **One filter layer.** Every chart reads the same filter state, so drill-downs, page takeaways and Ask the Data
+  answers stay consistent.
+- **The language model never produces numbers.** It writes a query (validated as a single read-only SELECT on the
+  documented views) or a short explanation of rows already on screen.
+
+## Data and methodology
+
+- [Metric definitions](docs/metric_definitions.md) — eNPS, response rate, driver scores, compa-ratio, manager status,
+  time to fill, SLA, offer acceptance, joining rate, agency fee.
+- [Metric reference](docs/metric_reference.md) — reference values with base counts, regenerated from the database.
+- [Data profile](docs/data_profile.md) and [data quality note](docs/data_quality.md) — what the raw data looked like
+  and every treatment applied.
+- [Hypotheses](docs/hypotheses.md) and [insights](docs/insights.md) — each hypothesis with its test, effect size,
+  p-value, caveat and recommended action.
+- [Ask the Data evaluation](docs/ask_the_data_evaluation.md) — answers checked against the dashboards, and refusal tests.
+
+## Repository
+
+```
+backend/    API, metric definitions in SQL, filter layer, Ask the Data, plain-language takeaways
+frontend/   React application (dashboards, landing page, Ask the Data panel)
+pipeline/   profiling, cleaning, database build, metric reference, insights, deck
+data/raw/   source workbooks (read-only)
+docs/       insights, deck, data quality, metric definitions, charts, screenshots
+tests/      data, metric, API, Ask the Data, insight and deck checks
+```
+
+## Deployment
+
+Deployed on Render as a single web service from `render.yaml`. Each deploy installs the pinned requirements, rebuilds
+the database from `data/raw/` with the pipeline, and builds the frontend; pushes to `main` deploy automatically.
+`GROQ_API_KEY` is set in the Render environment; without it the dashboards work fully and the AI features are off.
+
+To rebuild the database and analysis outputs:
 
 ```bash
-python pipeline/check_metrics.py     # analysis/metric_reference.md — reference values with n
-python pipeline/05_insights.py       # hypotheses, ranked insights, counterfactuals, recommendations, charts, DQ note
-python pipeline/06_build_deck.py     # 12-slide deck; every number traced to insights.md in deck_number_trace.md
-python scripts/build_submission.py --url https://people-sight.onrender.com   # submission PDFs + working zip
+pip install -r requirements.txt
+python pipeline/02_clean_enps.py && python pipeline/03_clean_recruitment.py && python pipeline/04_build_db.py
+python pipeline/check_metrics.py && python pipeline/05_insights.py && python pipeline/06_build_deck.py
+pytest tests
 ```
 
-The deck PDF is exported from the .pptx with LibreOffice (`soffice --headless --convert-to pdf`).
+---
 
-## Architecture
-
-```
-data/raw/*.xlsx ──► pipeline (pandas) ──► data/clean/*.parquet + dq_log.csv ──► 04_build_db ──► people.duckdb
-                                                                                     │  t_* tables, v_* views
-                                                                                     ▼  (COMMENT on every column)
-React (URL = filter state) ──POST /api/...──► FastAPI ──► filters.build_where ──► metrics_*.py SQL ──► DuckDB (read-only)
-        ▲                                         │
-        └──────── {data, sql, n} ◄────────────────┘     Ask the Data: question guard → Groq (SQL + chart spec only)
-                                                          → sqlglot validator → filter CTEs → read-only run → n<5 suppression
-```
-
-- **One source of truth for filters.** The URL holds the filter state; `backend/filters.py` turns it into one
-  parameterised WHERE clause used by every endpoint. React does no filtering and no metric maths.
-- **Every response is `{data, sql, n}`.** The SQL starts with a `-- params:` comment and is exactly what ran.
-- **Anonymity.** Survey views hold no names or employee IDs (a salted respondent key links the two waves); every slicing
-  attribute is precomputed on the survey rows. Groups under 5 respondents show "n<5". Names exist only in
-  `v_interviewers`, used on the Hiring page; any query mixing names with survey data is refused.
-- **Ask the Data.** Groq (`GROQ_MODEL`, default `openai/gpt-oss-120b`) only writes SQL and a chart spec; it never sees
-  results and never produces numbers. Guard → validate (one SELECT, `v_*` views only, no file / system functions) →
-  5-second read-only run → suppression. Evidence: `analysis/ask_the_data_tests.md`.
-- **Hardening.** gzip; immutable caching for hashed assets, no-cache for `index.html`; `nosniff` / frame / referrer
-  headers; 256 KB request cap; per-IP limit on the two Groq endpoints (`AI_RATE_PER_MIN`, default 10/min); no CORS
-  unless `CORS_ORIGINS` is set (the app is same-origin).
-
-## Metric definitions
-
-- **eNPS** (Q1, 0-10) = % promoters (9-10) − % detractors (0-6), one decimal. Passives = 7-8.
-- **Response rate** = valid respondents ÷ employees active on the wave open date (same segment). Waves: April
-  (06–17 Apr 2026, invited = active on 06-Apr) and October (05–16 Oct 2026, active on 05-Oct).
-- **Drivers Q2–Q6** (1-5): mean and % favourable (4-5): manager feedback, fair pay, workload, onboarding/tools, growth path.
-- **Panel view**: people who answered both waves. **Wave change** = October − April.
-- **Compa-ratio** = annual CTC ÷ band mid for (job family, grade), 2026-04-01 band set; below < 0.90 ≤ at ≤ 1.10 < above.
-- **manager_status**: *Changed manager* = Manager Effective From between 18-Apr and 04-Oct-2026 and after joining;
-  *New joiner (first manager)* = in that window and equal to the joining date; *Same manager* = everyone else.
-- **Time to fill** = hired candidate's offer response date − req raised date. Hired = offer accepted and not backed out.
-- **SLA**: 30 days (up to G2), 45 (G3–G5), 60 (G6+). Met = TTF ≤ SLA. Open reqs breached if age on 31-Oct-2026 > SLA.
-  Recomputed status is used; the ATS status is compared and its mismatches reported.
-- **Offer acceptance** = accepted ÷ (accepted + declined). **Joining rate** = joined ÷ accepted with expected DOJ ≤ 31-Oct.
-- **R1 feedback turnaround** = feedback submitted − R1 interview date. **Agency fee** = 8.33% × offered CTC, joiners only.
-- **Recruiter attainment** = accepted offers per month ÷ monthly target, in two versions (all accepted / excluding
-  backed-out), shown next to a per-req fair comparison because attainment depends on how many reqs a recruiter holds.
-
-The full list is in `docs/metric_definitions.md` (also used by Ask the Data). Reference values for all of these (with n) are in `analysis/metric_reference.md`, regenerated by `pipeline/check_metrics.py`.
-
-## Cleaning steps
-
-Every rule writes a row to `data/clean/dq_log.csv` (dataset, sheet, column, issue, rows affected, treatment,
-assumption); row counts in → out per sheet are in `data/clean/reconciliation.csv`. Both are on the Data Quality page and
-summarised in `analysis/dq_note.md`.
-
-1. **IDs**: trim, upper-case, add missing `REQ_` prefixes; drop exact duplicate rows; for the same employee ID with
-   different values keep the latest record.
-2. **Categoricals**: map spelling / case variants of thread, grade, location, status, source, wave and candidate status
-   to one canonical list (only spelling variants are merged).
-3. **Dates**: parse mixed formats day-first, including Excel serials; flag impossible orders.
-4. **Money and text numbers**: Indian-comma and "LPA / lakh" strings to rupees; notice periods to days; monthly CTC
-   values entered as annual are multiplied by 12 and flagged.
-5. **Status fixes**: "Active" with an exit date → Exited; Exited without a date → treated as left before October.
-6. **Survey**: drop test IDs, IDs not in the master, superseded duplicates, people not active on the wave open date;
-   Q1 blank or outside 0-10 makes the response invalid for all metrics.
-7. **Recruitment**: candidates whose requisition is not in the extract are excluded (kept in a separate file);
-   backed-out candidates are not hires; SLA status is recomputed from dates.
-
-## Assumptions (main ones)
-
-- HRMS keeps only current attributes and the current manager, so survey segments use current thread / function /
-  grade / location; tenure band is computed at each wave's open date.
-- Manager Effective From equal to the joining date = first manager, not a change.
-- Q1 blank or out of range → response invalid for every survey metric (one base n per wave).
-- Source filter on the Hiring page: openings = openings with at least one applicant from the source; filled and TTF =
-  openings filled by a hire from that source.
-- Agency fees apply to joiners only. Recruiter attainment is shown in two versions over the seven months Apr–Oct 2026.
-- All joins use Employee ID — HRMS contains duplicate names.
-- The data are synthetic; the as-of date is 31-Oct-2026.
-
-## Deploy (Render)
-
-`render.yaml` defines one free web service: build `./build.sh`, start
-`uvicorn backend.main:app --host 0.0.0.0 --port $PORT --proxy-headers --forwarded-allow-ips "*"`, health check
-`/api/health`. Set `GROQ_API_KEY` in the Render dashboard (it is never committed); `GROQ_MODEL`, `GROQ_CACHE_TTL` and
-`AI_RATE_PER_MIN` have defaults in the blueprint.
+Built with Python, DuckDB, FastAPI, React, ECharts and Groq. Maintained by Lakshay Malik.

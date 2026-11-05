@@ -1,4 +1,4 @@
-"""Phase 5: API contract, filters, reconciliation and suppression through HTTP."""
+"""API contract, filters, reconciliation and suppression through HTTP."""
 import random
 
 import pytest

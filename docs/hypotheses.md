@@ -1,6 +1,6 @@
-# Hypotheses (Phase 9)
+# Hypotheses
 
-Written from the project plan before testing; `pipeline/05_insights.py` tests each one and writes `analysis/insights.md`. Tests: eNPS z-test on the +1/0/−1 score, two-proportion z / Fisher exact, Mann-Whitney U, Wilcoxon signed-rank (panel), within-strata permutation, Spearman.
+Written before testing; `pipeline/05_insights.py` tests each one and writes `docs/insights.md`. Tests: eNPS z-test on the +1/0/−1 score, two-proportion z / Fisher exact, Mann-Whitney U, Wilcoxon signed-rank (panel), within-strata permutation, Spearman.
 
 | ID | Hypothesis | Data | Test |
 |---|---|---|---|
@@ -26,4 +26,4 @@ Written from the project plan before testing; `pipeline/05_insights.py` tests ea
 | 17 | Low / falling eNPS teams raise more replacement reqs | v_survey, v_employees, v_requisitions (team level) | Spearman |
 | 18 | Interviewers and hiring managers report worse Q4 workload (n ≥ 5) | v_survey (role flags) | Mann-Whitney |
 | 19 | This year's joiners rate Q5 onboarding lower in October | v_survey | Mann-Whitney |
-| 20 | Where the days go: median days per funnel stage for filled reqs, overall vs G6+ (added at the Phase 9 review) | v_requisitions, v_candidates | Mann-Whitney per stage |
+| 20 | Where the days go: median days per funnel stage for filled reqs, overall vs G6+ (added at review) | v_requisitions, v_candidates | Mann-Whitney per stage |

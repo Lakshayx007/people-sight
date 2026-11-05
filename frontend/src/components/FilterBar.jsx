@@ -5,7 +5,7 @@ import { useFilters } from '../context/FilterContext';
 import { loadFilterOptions } from '../lib/api';
 
 /**
- * Adapted from Onco-Sight's FilterBar: every filter is a multi-select fed by /api/filters/options,
+ * Global filter bar: every filter is a multi-select fed by /api/filters/options,
  * state lives in the URL (FilterContext). Active filters show as removable chips with Clear all,
  * and a breadcrumb trail shows the drill-down path.
  */

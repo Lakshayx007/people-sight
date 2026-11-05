@@ -1,4 +1,4 @@
-"""Phase 9: insights and DQ note — reconcile with the dashboard metrics, completeness, anonymity, reproducibility."""
+"""Insights and DQ note — reconcile with the dashboard metrics, completeness, anonymity, reproducibility."""
 import hashlib
 import importlib.util
 import re
@@ -7,7 +7,7 @@ from pathlib import Path
 import pandas as pd
 import pytest
 
-pytest.importorskip("scipy", reason="analysis extras not installed (pip install -r requirements-analysis.txt)")
+pytest.importorskip("scipy", reason="analysis extras not installed (pip install -r requirements.txt)")
 pytest.importorskip("matplotlib", reason="analysis extras not installed")
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -79,7 +79,7 @@ def test_no_names_or_ids_in_insights(ins):
 
 
 def test_dq_note_counts_from_log(ins):
-    note = (ins.OUT / "dq_note.md").read_text(encoding="utf-8")
+    note = (ins.OUT / "data_quality.md").read_text(encoding="utf-8")
     log = pd.read_csv(ROOT / "data" / "clean" / "dq_log.csv")
     for issue_start, label in [("No matching requisition", "Orphan candidates"),
                                ("Exited with missing exit date", "Exited without an exit date"),
@@ -96,4 +96,4 @@ def test_reproducible(ins):
     ins.main()
     assert hashlib.sha256(p.read_bytes()).hexdigest() == h1
     # the committed insights.md is what the script produces
-    assert p.read_text(encoding="utf-8") == (ROOT / "analysis" / "insights.md").read_text(encoding="utf-8")
+    assert p.read_text(encoding="utf-8") == (ROOT / "docs" / "insights.md").read_text(encoding="utf-8")

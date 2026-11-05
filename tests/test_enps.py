@@ -1,4 +1,4 @@
-"""Data checks for the cleaned eNPS workbook (Phase 2)."""
+"""Data checks for the cleaned eNPS workbook."""
 import pandas as pd
 import pytest
 
@@ -19,7 +19,7 @@ def valid(enps):
     return enps["resp"][enps["resp"]["is_valid"]]
 
 
-# ── the five checks named in the project plan ───────────────────────────────────────
+# ── the five data checks required for this dataset ───────────────────────────────────────
 
 def test_unique_employee_ids(enps):
     ids = enps["emp"]["employee_id"]

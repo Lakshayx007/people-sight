@@ -4,7 +4,7 @@ import App from './App.jsx';
 import './index.css';
 import { registerAllThemes } from './themes/themeConfig.js';
 
-// Register ECharts themes before React renders (Onco-Sight pattern)
+// Register ECharts themes before React renders
 registerAllThemes();
 
 ReactDOM.createRoot(document.getElementById('root')).render(

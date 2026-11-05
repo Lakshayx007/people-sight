@@ -1,7 +1,7 @@
 import * as echarts from 'echarts';
 
 /**
- * ECharts themes, registered before React renders (pattern from Onco-Sight's themeConfig.js).
+ * ECharts themes, registered before React renders.
  * One accent colour; April / passive = neutral grey; negative = red, used only for bad outcomes.
  */
 export const PALETTE = {

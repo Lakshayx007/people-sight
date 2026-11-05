@@ -10,7 +10,7 @@ import SqlBlock from './SqlBlock';
 import { fmtInt, isNum } from '../lib/format';
 
 /**
- * Ask the Data — upgraded from Onco-Sight's Chatbot.jsx into a slide-in panel.
+ * Ask the Data — slide-in panel.
  * The question goes to POST /api/ask; the backend writes and validates ONE read-only SQL query and runs it.
  * The panel shows the chart Groq specified, the explanation, the exact SQL and the rows.
  */

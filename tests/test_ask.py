@@ -1,4 +1,4 @@
-"""Phase 8: Ask the Data guardrails, validation, filters, suppression and API behaviour (Groq stubbed)."""
+"""Ask the Data guardrails, validation, filters, suppression and API behaviour (Groq stubbed)."""
 import pytest
 
 from backend import ai_service, ask

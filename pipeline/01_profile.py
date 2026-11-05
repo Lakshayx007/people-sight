@@ -1,11 +1,11 @@
 """
 01_profile.py
 -------------
-Profile the two raw workbooks (read-only) and write analysis/profile.md.
+Profile the two raw workbooks (read-only) and write docs/data_profile.md.
 
 Sections
-  1. Known-issue checklist: every issue listed in the case brief, re-counted from the data.
-  2. New findings not listed in the case brief before Phase 1.
+  1. Known-issue checklist: every issue listed in the data handover notes, re-counted from the data.
+  2. New findings not listed in the data handover notes.
   3. Duplicate keys.  4. ID format checks.  5. Foreign-key checks.
   6. Per-sheet, per-column profile (type mix, nulls, distinct, top 25, min/max).
 
@@ -23,16 +23,16 @@ import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from common import (  # noqa: E402
-    ANALYSIS_DIR, AS_OF, EMP_ID_RE, ENPS_FILE, NOTES_SHEETS, RECRUIT_FILE, REQ_ID_RE, WAVES,
+    DOCS_DIR, AS_OF, EMP_ID_RE, ENPS_FILE, NOTES_SHEETS, RECRUIT_FILE, REQ_ID_RE, WAVES,
     active_on, date_format_of, grade_num, is_blank, job_family, norm_emp_id, norm_grade,
     norm_req_id, parse_date, parse_inr,
 )
 
-OUT = ANALYSIS_DIR / "profile.md"
+OUT = DOCS_DIR / "data_profile.md"
 DATE_COL_RE = re.compile(r"Date|\bOn$|DOJ|Effective From")
 TOP_N = 25
 
-# Candidate Status values agreed in Phase 0 (spelling variants map onto these).
+# Agreed canonical Candidate Status values (spelling variants map onto these).
 CANDIDATE_STATUS_CANON = {
     "Applied - Under Review", "Shortlisted", "Screening Cleared", "R1 Cleared", "R1 Feedback Pending",
     "Offer In Approval", "Offer Accepted - Yet to Join", "Joined", "Offer Declined",
@@ -107,7 +107,7 @@ rq, cd, rc, pdir = (R["Requisitions"].copy(), R["Candidates"].copy(),
 Q1 = [c for c in rs.columns if c.startswith("Q1")][0]
 QCOLS = [c for c in rs.columns if re.match(r"Q[1-6]\.", c)]
 
-# Normalised helper columns (profiling only — the real cleaning is Phase 2/3)
+# Normalised helper columns (profiling only — the cleaning itself is in 02 and 03)
 em["_id"] = em["Employee ID"].map(norm_emp_id)
 em["_upd"] = pd.to_datetime(em["Record Updated On"])
 em["_status"] = em["Employment Status"].str.strip().str.title()
@@ -233,7 +233,7 @@ known("People_Directory", "Directory IDs join to Employee_Master", f"{int((~pdir
 known("Candidates", "R1 Interviewer IDs all resolve", f"{int((~cdd['R1 Interviewer ID'].dropna().map(norm_emp_id).isin(set(pdir['Employee ID']))).sum())} not in People_Directory")
 
 # ── 2. new findings ──────────────────────────────────────────────────────────
-new("Employee_Master", f"Of the {n_idfix} Employee IDs that need fixing, only {n_lower} are lowercase; {n_idfix - n_lower} just have stray spaces.", "Wording fix in the case brief; same treatment.")
+new("Employee_Master", f"Of the {n_idfix} Employee IDs that need fixing, only {n_lower} are lowercase; {n_idfix - n_lower} just have stray spaces.", "Notes corrected; same treatment.")
 emu_s = emu
 a_ex = emu_s[(emu_s["_status"] == "Active") & emu_s["_exit"].notna()]
 x_nd = emu_s[(emu_s["_status"] == "Exited") & emu_s["_exit"].isna()]
@@ -246,7 +246,7 @@ new("Employee_Master", f"Location Type is null on {len(lt_null_loc)} rows; {int(
 pnull = em["Performance Rating FY25-26"].isna()
 new("Employee_Master", f"All {int(pnull.sum())} null performance ratings belong to joiners on/after 01-Jan-2026 ({int((pnull & (em['_doj'] >= '2026-01-01')).sum())}); none are otherwise missing.", "All → 'Not Rated - New Joiner'; 'Missing' bucket will be empty.")
 gv = sorted(set(em["Grade"]) - {f"G{i}" for i in range(1, 11)} - {"TBA"})
-new("Employee_Master", f"Grade spellings beyond the examples in the case brief: {fmt_list(gv, 30)}.", "All map to TBA/G1–G10 with one rule.")
+new("Employee_Master", f"Grade spellings beyond the examples in the data handover notes: {fmt_list(gv, 30)}.", "All map to TBA/G1–G10 with one rule.")
 mgr_missing = sorted(set(em["Reporting Manager ID"].map(norm_emp_id)) - master_ids)
 new("Employee_Master", f"{len(mgr_missing)} Reporting Manager IDs are not in Employee_Master (of {em['Reporting Manager ID'].nunique()} distinct).", "Informational: manager attributes unavailable for those; not used in metrics.")
 paired = rs[rs.duplicated(["_id", "_wave"], keep=False) & ~rs["_id"].isin(TEST_IDS)].sort_values("_sub")
@@ -254,8 +254,8 @@ diff_pairs = int(paired.groupby(["_id", "_wave"])[QCOLS].nunique(dropna=False).g
 new("eNPS_Responses", f"Of the {int((pairs > 1).sum())} double-answered employee-wave pairs, {diff_pairs} have at least one different Q1–Q6 answer between the two submissions.", "Keep latest submission (brief rule); the choice matters only for these pairs.")
 qnull = {c.split('.')[0]: int(rs[c].isna().sum()) for c in QCOLS}
 new("eNPS_Responses", f"Blank answers per question: {qnull}.", "Q1 blank → not valid for eNPS; Q2–Q6 blank → excluded from that driver's mean only.")
-new("eNPS_Responses", f"{rs['Comments (optional)'].nunique()} distinct comment phrases (the case brief says ~20).", "All 22 get a theme in Phase 2.")
-new("Requisitions", f"Thread spelling `central` (lowercase) is not in the case brief's variant list.", "Same normalisation.")
+new("eNPS_Responses", f"{rs['Comments (optional)'].nunique()} distinct comment phrases (the data handover notes says ~20).", "All 22 get a theme during cleaning.")
+new("Requisitions", f"Thread spelling `central` (lowercase) is not in the data handover notes's variant list.", "Same normalisation.")
 rep_ids = rq["Replaced Employee ID"].dropna().map(norm_emp_id)
 new("Requisitions", f"{int((~rep_ids.isin(master_ids)).sum())} of {len(rep_ids)} Replaced Employee IDs are not in Employee_Master.", "Expected per data dictionary (left before 01-Apr-2026): exit fields and days_exit_to_req stay null.")
 new("Requisitions", f"SLA Status (System) is blank on {int(rq['SLA Status (System)'].isna().sum())} reqs (by Req Status: {counts(rq.loc[rq['SLA Status (System)'].isna(), 'Req Status'])}).", "Recomputed SLA status covers them; count as 'system blank' in the mismatch table.")
@@ -266,7 +266,7 @@ cs = cdk["_status"]
 new("Candidates", f"Kept candidates: {int(cs.str.lower().eq('joined').sum())} status Joined, {int(cdk['Actual DOJ'].notna().sum())} with Actual DOJ, {int(rq['Req Status'].str.strip().str.lower().isin(['closed - joined', 'closed-joined', 'joined']).sum())} reqs Closed - Joined.", "Counts reconcile once orphans are excluded.")
 extra_status = sorted(set(cdd["Candidate Status"].str.strip()) - CANDIDATE_STATUS_CANON)
 new("Candidates", f"Candidate Status values outside the 16 agreed canonical values (spelling variants only): {fmt_list(extra_status)}.", "Map to canonical list; no new categories.")
-new("Candidates", f"Notice Period strings beyond the case brief's examples: {fmt_list(sorted(set(np_str) - {'2 months', '1 month', '30 days', 'Immediate'}))}.", "Same rule (month = 30 days, Immediate = 0).")
+new("Candidates", f"Notice Period strings beyond the data handover notes's examples: {fmt_list(sorted(set(np_str) - {'2 months', '1 month', '30 days', 'Immediate'}))}.", "Same rule (month = 30 days, Immediate = 0).")
 new("Candidates", f"Offer Status values: {counts(cdd['Offer Status'].dropna())} — no 'Pending' despite the data dictionary.", "Nothing to do.")
 pairs_stage = [("Applied On", "Shortlisted On"), ("Shortlisted On", "Screening Done On"), ("Screening Done On", "R1 Interview Date"),
                ("R1 Interview Date", "R2 Interview Date"), ("R2 Interview Date", "Offer Released On"),
@@ -286,7 +286,7 @@ over = off[off["Offered CTC (INR)"].astype(float) > off["_req"].map(budget).asty
 new("Candidates", f"{len(over)} of {len(off)} offers exceed the requisition's Budgeted Max CTC ({over['Offer Status'].value_counts().to_dict()}).", "Input to hypothesis 13 (budget headroom).")
 
 ctc_flag = em[(em["_compa"] < 0.5) | (em["_compa"] > 2)].drop_duplicates("_id")
-new("Employee_Master", f"{len(ctc_flag)} employees have CTC outside 0.5x–2x of their 2026 band mid (compa {ctc_flag['_compa'].min():.2f}–{ctc_flag['_compa'].max():.2f}); lowest CTC is ₹{em['_ctc'].min():,.0f}. All are low, none high; ×12 puts every one at compa {(ctc_flag['_compa'] * 12).min():.2f}–{(ctc_flag['_compa'] * 12).max():.2f}, so they look like monthly figures. Detail table below.", "Decision for Phase 2: ×12 (treat as monthly) or keep raw and exclude from compa-ratio analysis. Flag either way.")
+new("Employee_Master", f"{len(ctc_flag)} employees have CTC outside 0.5x–2x of their 2026 band mid (compa {ctc_flag['_compa'].min():.2f}–{ctc_flag['_compa'].max():.2f}); lowest CTC is ₹{em['_ctc'].min():,.0f}. All are low, none high; ×12 puts every one at compa {(ctc_flag['_compa'] * 12).min():.2f}–{(ctc_flag['_compa'] * 12).max():.2f}, so they look like monthly figures. Detail table below.", "Treated as monthly salary (×12) during cleaning and flagged.")
 names_per_id = em.drop_duplicates("_id")["Employee Name"]
 new("Employee_Master", f"Employee names are not unique: {names_per_id.nunique():,} distinct names across {len(names_per_id):,} employee IDs ({int(names_per_id.duplicated(keep=False).sum())} IDs share a name).", "Never join or look up by name; Ask the Data refuses named-person survey questions regardless.")
 
@@ -400,7 +400,7 @@ md = [
     "# Raw data profile",
     "",
     "Generated by `pipeline/01_profile.py` from `data/raw/` (read-only). Do not edit by hand; re-run the script.",
-    "Normalisation used here (strip/upper IDs, REQ_ prefix, date parsing) is only for checking; the cleaning itself is Phases 2–3.",
+    "Normalisation used here (strip/upper IDs, REQ_ prefix, date parsing) is only for checking; the cleaning itself is in pipeline steps 02 and 03.",
     "",
     "## Row counts",
     "",
@@ -408,11 +408,11 @@ md = [
           [["eNPS_Data.xlsx", k, f"{len(v):,}", v.shape[1]] for k, v in E.items()] +
           [["Recruitment_Data.xlsx", k, f"{len(v):,}", v.shape[1]] for k, v in R.items()]),
     "",
-    f"## 1. Known-issue checklist ({n_ok} of {len(findings_known)} confirmed as described in the case brief)",
+    f"## 1. Known-issue checklist ({n_ok} of {len(findings_known)} confirmed as described in the data handover notes)",
     "",
-    table(["#", "Sheet", "Issue in the case brief", "Found in data", "Status"], findings_known),
+    table(["#", "Sheet", "Issue in the data handover notes", "Found in data", "Status"], findings_known),
     "",
-    "## 2. New findings (not in the case brief before Phase 1)",
+    "## 2. New findings (not in the data handover notes)",
     "",
     table(["#", "Sheet", "Finding", "Treatment / impact"], findings_new),
     "",
@@ -426,7 +426,7 @@ md = [
     "",
     table(["Sheet", "Key", "Extra (duplicate) rows"], dups),
     "",
-    "Employee IDs that repeat with different values (latest Record Updated On wins in Phase 2):",
+    "Employee IDs that repeat with different values (latest Record Updated On wins during cleaning):",
     "",
     table(["Employee ID", "Columns that differ"], [[k, ", ".join(v)] for k, v in diffcols.items()]),
     "",

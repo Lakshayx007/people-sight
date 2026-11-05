@@ -1,4 +1,4 @@
-"""Phase 4: the SQL metrics agree with an independent pandas calculation on the cleaned parquet,
+"""The SQL metrics agree with an independent pandas calculation on the cleaned parquet,
 segments add up to totals, suppression works, and the database schema is safe and documented."""
 import numpy as np
 import pandas as pd

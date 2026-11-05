@@ -171,7 +171,7 @@ dq.log(EM, "Date of Exit", f"Mixed formats {fmt[fmt != 'blank'].value_counts().t
 e["manager_effective_from"] = pd.to_datetime(e["Manager Effective From"])
 e["record_updated_on"] = e["_upd"]
 
-# status vs exit date cross-check (agreed decision, Phase 0/1)
+# status vs exit date cross-check (agreed decision)
 act_exit = (e["employment_status"] == "Active") & e["date_of_exit"].notna()
 dq.log(EM, "Employment Status", f"'Active' but Date of Exit + Exit Type present ({', '.join(e.loc[act_exit, 'employee_id'])})", int(act_exit.sum()),
        "Set to Exited, kept the exit date", "Exit date, type and classification agree; the status field is stale")
@@ -218,7 +218,7 @@ e.loc[e["annual_ctc"].isna(), "ctc_flag"] = "missing"
 e.loc[monthly, "annual_ctc"] = e.loc[monthly, "annual_ctc"] * 12
 e.loc[monthly, "ctc_flag"] = "corrected_monthly_x12"
 dq.log(EM, "Annual CTC (INR)", f"Value < 0.5x band mid and x12 lands within 0.5x-2x ({', '.join(e.loc[monthly, 'employee_id'])})", int(monthly.sum()),
-       "Multiplied by 12, ctc_flag = corrected_monthly_x12", "Monthly salary entered in the annual field (user decision, Phase 1, option A)")
+       "Multiplied by 12, ctc_flag = corrected_monthly_x12", "Monthly salary entered in the annual field (agreed decision)")
 ratio = e["annual_ctc"] / e["band_mid"]
 oob = ratio.notna() & ((ratio < 0.5) | (ratio > 2.0))
 e.loc[oob, "ctc_flag"] = "out_of_band"
@@ -238,7 +238,7 @@ for w, wd in WAVES.items():
     e[f"active_on_{key}_open"] = active_on(e["date_of_joining"], e["date_of_exit"], wd["open"])
     e[f"tenure_band_{key}"] = tenure_band(e["date_of_joining"], wd["open"])
 e["tenure_band_asof"] = tenure_band(e["date_of_joining"], AS_OF)
-# Exited with no exit date (user decision after Phase 3): exited before the October wave, date unknown.
+# Exited with no exit date (agreed decision): exited before the October wave, date unknown.
 unk = e["exit_date_unknown"]
 e.loc[unk, "active_on_oct_open"] = False
 e.loc[unk, "active_on_apr_open"] = e.loc[unk, "date_of_joining"] <= WAVES["Apr"]["open"]
@@ -382,7 +382,7 @@ r.to_parquet(CLEAN_DIR / "survey_responses.parquet", index=False)
 pb.to_parquet(CLEAN_DIR / "pay_bands.parquet", index=False)
 dq.write()
 
-# console summary (numbers for the checkpoint; the official reference is metric_reference.md in Phase 4)
+# console summary (the official reference is docs/metric_reference.md)
 print(f"employees.parquet        {len(e):>5} rows  (raw {len(raw)})")
 print(f"survey_responses.parquet {len(r):>5} rows  ({int(r.is_valid.sum())} valid)")
 print(f"pay_bands.parquet        {len(pb):>5} rows")

@@ -1,13 +1,13 @@
 """
 06_build_deck.py
 ----------------
-Builds analysis/Porter_People_Insights.pptx (16:9, 12 slides) for the CHRO and TA Head with python-pptx, and
-analysis/deck_number_trace.md, which lists every number on every slide (text, tables, speaker notes) and the line of
-analysis/insights.md (or analysis/dq_note.md for the data-quality slide) it comes from. The build stops if any number
+Builds docs/Porter_People_Insights.pptx (16:9, 12 slides) for the CHRO and TA Head with python-pptx, and
+docs/deck_number_trace.md, which lists every number on every slide (text, tables, speaker notes) and the line of
+docs/insights.md (or docs/data_quality.md for the data-quality slide) it comes from. The build stops if any number
 cannot be traced.
 
 Numbers come from pipeline/05_insights.py (the code that writes insights.md), formatted with the same helpers, so a
-slide number and its insights.md line are the same string. Charts are the Phase 9 charts re-rendered without their
+slide number and its insights.md line are the same string. Charts are the insight charts re-rendered without their
 own title (charts/deck/), because each slide headline already states the finding.
 
 Run after 05_insights.py:  python pipeline/06_build_deck.py
@@ -25,7 +25,7 @@ from pptx.enum.text import MSO_ANCHOR, PP_ALIGN
 from pptx.util import Inches, Pt
 
 ROOT = Path(__file__).resolve().parents[1]
-ANALYSIS = ROOT / "analysis"
+ANALYSIS = ROOT / "docs"
 DECK = ANALYSIS / "Porter_People_Insights.pptx"
 TRACE = ANALYSIS / "deck_number_trace.md"
 
@@ -47,7 +47,7 @@ def rgb(h: str) -> RGBColor:
 
 # ── number tracing ────────────────────────────────────────────────────────────
 INS_LINES = (ANALYSIS / "insights.md").read_text(encoding="utf-8").splitlines()
-DQ_LINES = (ANALYSIS / "dq_note.md").read_text(encoding="utf-8").splitlines()
+DQ_LINES = (ANALYSIS / "data_quality.md").read_text(encoding="utf-8").splitlines()
 IGNORE = [r"\b20\d\d-\d\d-\d\d\b", r"\bG\d+(?:\+|-G\d+)?", r"\bQ\d\b", r"\bF\d+[ab]?\b", r"\b\d{1,2}-[A-Z][a-z]{2}(?:-\d{4})?\b",
           r"\b(?:30/60/90|48-hour|90-day|1:1s?|16:9)\b", r"\bslides? \d+(?:[-–]\d+)?(?:, \d+)*\b", r"\b\d+ / 12\b",
           r"\b20\d\d\b", r"\bApr(?:il)?[-–]Oct(?:ober)?\b", r"\bInterviewer [AB]\b", r"\b0\.90×", r"\bp < 0\.001\b",
@@ -84,8 +84,8 @@ def trace(slide_no: int, where: str, text: str, sources: list[str], dq: bool = F
         hit = next((i for i in order if pat.search(lines[i])), None)
         if hit is None:
             raise SystemExit(f"slide {slide_no}: number '{tok}' in {where} not found in "
-                             f"{'dq_note.md' if dq else 'insights.md'}")
-        TRACE_ROWS.append((slide_no, where, tok, "dq_note.md" if dq else "insights.md", hit + 1,
+                             f"{'data_quality.md' if dq else 'insights.md'}")
+        TRACE_ROWS.append((slide_no, where, tok, "data_quality.md" if dq else "insights.md", hit + 1,
                            lines[hit].strip()[:140]))
 
 
@@ -197,7 +197,7 @@ def build() -> None:
     prs.core_properties.subject = "Employee sentiment and hiring, April–October 2026"
     import datetime as _dt
     cp = prs.core_properties
-    cp.last_modified_by, cp.comments, cp.category, cp.keywords = "Lakshay Malik", "", "Case study", "People Sight"
+    cp.last_modified_by, cp.comments, cp.category, cp.keywords = "Lakshay Malik", "", "People analytics", "People Sight"
     cp.created = cp.modified = _dt.datetime(2026, 11, 5)
     cp.revision = 1
 
@@ -442,7 +442,7 @@ def build() -> None:
           "scores with same-manager colleagues in their thread; declines avoided use the 0.90-0.99 band's decline rate. "
           "Each measure can be read from the dashboard after the next wave.", ["Recommendations"])
 
-    # 12 ─ data quality and limitations (dq_note.md) ────────────────────────
+    # 12 ─ data quality and limitations (data_quality.md) ────────────────────────
     s = prs.slides.add_slide(prs.slide_layouts[6])
     import pandas as pd
     log = pd.read_csv(ROOT / "data" / "clean" / "dq_log.csv")
@@ -485,7 +485,7 @@ def build() -> None:
     text(s, 8.8, 2.35, 3.7, 4.3, lim, size=14, color=WHITE, space_after=12)
     footer(s, 12)
     notes(s, 12, "Counts come from data/clean/dq_log.csv and reconciliation.csv (also on the dashboard's Data quality page "
-          "and in dq_note.md). Raw workbooks are never modified; recomputed SLA status is used everywhere and the ATS "
+          "and in docs/data_quality.md). Raw workbooks are never modified; recomputed SLA status is used everywhere and the ATS "
           "disagreement is reported as a finding.", [], dq=True)
 
     prs.save(str(DECK))
@@ -511,9 +511,9 @@ def _fix_app_props(path: Path, n_slides: int) -> None:
 
 def write_trace() -> None:
     out = ["# Deck number trace", "",
-           "Every number on every slide of `analysis/Porter_People_Insights.pptx` — headlines, stat cards, chart "
-           "captions, tables and speaker notes — with the line of `analysis/insights.md` (slide 12: "
-           "`analysis/dq_note.md`) where the same value appears. Generated by `pipeline/06_build_deck.py`; the build "
+           "Every number on every slide of `docs/Porter_People_Insights.pptx` — headlines, stat cards, chart "
+           "captions, tables and speaker notes — with the line of `docs/insights.md` (slide 12: "
+           "`docs/data_quality.md`) where the same value appears. Generated by `pipeline/06_build_deck.py`; the build "
            "stops if a number cannot be traced. Line numbers refer to the files as generated in the same run.", "",
            "| Slide | Where | Number | Source | Line | Source text (start) |", "|---|---|---|---|---|---|"]
     for sl, where, tok, file, line, src_txt in TRACE_ROWS:
@@ -528,6 +528,6 @@ if __name__ == "__main__":
     import shutil
     build()
     write_trace()
-    SUBMISSION.parent.mkdir(exist_ok=True)
-    shutil.copyfile(DECK, SUBMISSION)
+    if SUBMISSION.parent.exists():          # local submission folder (not part of the repository)
+        shutil.copyfile(DECK, SUBMISSION)
     print(f"{DECK.relative_to(ROOT)}: {TOTAL} slides; {len(TRACE_ROWS)} numbers traced → {TRACE.relative_to(ROOT)}")

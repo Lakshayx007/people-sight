@@ -16,7 +16,7 @@ import pandas as pd
 ROOT = Path(__file__).resolve().parents[1]
 RAW_DIR = ROOT / "data" / "raw"
 CLEAN_DIR = ROOT / "data" / "clean"
-ANALYSIS_DIR = ROOT / "analysis"
+DOCS_DIR = ROOT / "docs"
 ENPS_FILE = RAW_DIR / "eNPS_Data.xlsx"
 RECRUIT_FILE = RAW_DIR / "Recruitment_Data.xlsx"
 

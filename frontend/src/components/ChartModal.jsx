@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { X } from 'lucide-react';
 
-// From Onco-Sight's ChartModal (zoom a chart to near full screen).
+// Zoom a chart to near full screen.
 export default function ChartModal({ isOpen, onClose, title, subtitle, children }) {
   useEffect(() => {
     if (!isOpen) return undefined;

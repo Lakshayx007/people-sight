@@ -1,4 +1,4 @@
-"""Phase 10 hardening: headers, gzip, request-size cap, AI rate limit, SPA routes, no CORS by default."""
+"""Hardening: headers, gzip, request-size cap, AI rate limit, SPA routes, no CORS by default."""
 import pytest
 
 from backend import main

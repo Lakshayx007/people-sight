@@ -1,8 +1,8 @@
 """
 main.py
 -------
-FastAPI app for Porter People Analytics (pattern adapted from Onco-Sight: lifespan, CORS, global exception
-handler, built frontend served with an SPA fallback so /sentiment, /hiring and /data-quality work as direct links).
+FastAPI app for People Sight: the JSON API plus the built frontend, served with an SPA fallback so /, /sentiment,
+/hiring and /data-quality work as direct links.
 
 Every API response is {"data": [...], "sql": "<exact SQL run>", "n": <base count>}.
 The "sql" text starts with a "-- params: {...}" comment holding the parameter values; that full text is what ran.

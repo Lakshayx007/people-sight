@@ -1,7 +1,7 @@
 """
 ai_service.py
 -------------
-Groq integration, adapted from Onco-Sight's ai_service.py: same lazy client, in-process TTL cache and graceful
+Groq integration: lazy client, in-process TTL cache and graceful
 fallback when no key is set. Used for exactly two things (Hard rule 9):
   1. Ask the Data: turn a question into ONE SQL query + a chart spec (JSON mode). The model never sees query results.
   2. Short chart blurbs written only from rows the dashboard already returned.

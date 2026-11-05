@@ -2,9 +2,9 @@
 check_metrics.py
 ----------------
 Run every metric in backend/metrics_enps.py and backend/metrics_hiring.py UNFILTERED against
-data/people.duckdb, print the headline numbers with n, and write analysis/metric_reference.md.
+data/people.duckdb, print the headline numbers with n, and write docs/metric_reference.md.
 
-metric_reference.md is the reference the dashboard (Phase 5 checkpoint) and deck must match.
+metric_reference.md is the reference the dashboard and the deck must match.
 Run:  python pipeline/check_metrics.py
 """
 from __future__ import annotations
@@ -22,7 +22,7 @@ from backend import metrics_enps as E, metrics_hiring as H  # noqa: E402
 from backend.sql_common import MIN_N  # noqa: E402
 
 DB = ROOT / "data" / "people.duckdb"
-OUT = ROOT / "analysis" / "metric_reference.md"
+OUT = ROOT / "docs" / "metric_reference.md"
 con = duckdb.connect(str(DB), read_only=True)
 
 
@@ -116,7 +116,7 @@ head = [
     f"(all accepted offers, {int(rhea.offers_accepted_all)}) / {rhea.attainment_excl_bo_pct}% (excluding backed-out, {int(rhea.offers_accepted_excl_bo)}) of a {int(rhea.monthly_offer_target)}/month target",
 ]
 
-# early signals — every number with its n (not yet significance-tested; Phase 9 does that)
+# early signals — every number with its n (significance is tested in docs/insights.md)
 ms = seg["manager_status"].set_index("segment")
 th = seg["thread"].set_index("segment")
 exg = ex.set_index("nps_group")
@@ -165,7 +165,7 @@ doc = ["# Metric reference",
        f"Survey groups with fewer than {MIN_N} respondents show — (suppressed). Percentages are 0–100.",
        "",
        "## Headline numbers",
-       ""] + head + ["", "## Early signals (with n; significance tested in Phase 9)", ""] + signals + [""] + sections
+       ""] + head + ["", "## Early signals (with n; significance tested in docs/insights.md)", ""] + signals + [""] + sections
 OUT.write_text("\n".join(doc), encoding="utf-8")
 print("\n".join(head + [""] + signals))
 print(f"\nWrote {OUT.relative_to(ROOT)} ({len(sections)} sections)")

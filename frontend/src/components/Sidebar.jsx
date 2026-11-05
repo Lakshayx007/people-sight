@@ -2,7 +2,7 @@ import { Link, NavLink } from 'react-router-dom';
 import { Briefcase, ClipboardCheck, Home, Moon, Smile, Sparkles, Sun, Users, X } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
 
-// Adapted from Onco-Sight's Sidebar: same collapsible layout and mobile overlay, new navigation.
+// Sidebar navigation with a mobile overlay.
 const NAV = [
   { name: 'Overview', icon: Home, path: '/' },
   { name: 'Employee sentiment', icon: Smile, path: '/sentiment' },

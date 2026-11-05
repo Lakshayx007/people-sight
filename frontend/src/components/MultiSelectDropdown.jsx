@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Check, ChevronDown, Search } from 'lucide-react';
 
 /**
- * Adapted from Onco-Sight's MultiSelectDropdown. Changes: nothing selected = "All" (no filter),
+ * Multi-select dropdown: nothing selected = "All" (no filter),
  * no forced minimum selection, a search box for long lists, the label shows the filter name.
  */
 export default function MultiSelectDropdown({ label, options = [], selected = [], onChange, align = 'left' }) {

@@ -1,11 +1,11 @@
-"""Phase 11: the insight deck builds, has 12 slides with notes, and every number on it traces to insights.md."""
+"""The insight deck builds, has 12 slides with notes, and every number on it traces to insights.md."""
 import importlib.util
 import re
 from pathlib import Path
 
 import pytest
 
-pytest.importorskip("pptx", reason="analysis extras not installed (pip install -r requirements-analysis.txt)")
+pytest.importorskip("pptx", reason="analysis extras not installed (pip install -r requirements.txt)")
 pytest.importorskip("scipy", reason="analysis extras not installed")
 from pptx import Presentation  # noqa: E402
 
@@ -49,8 +49,8 @@ def test_twelve_slides_with_notes_and_charts(deck):
 def test_every_number_traced(deck):
     rows = deck.TRACE_ROWS
     assert len(rows) > 150
-    ins = (ROOT / "analysis" / "insights.md").read_text(encoding="utf-8").splitlines()
-    dq = (ROOT / "analysis" / "dq_note.md").read_text(encoding="utf-8").splitlines()
+    ins = (ROOT / "docs" / "insights.md").read_text(encoding="utf-8").splitlines()
+    dq = (ROOT / "docs" / "data_quality.md").read_text(encoding="utf-8").splitlines()
     for slide, where, tok, file, line, _ in rows:
         src = ins if file == "insights.md" else dq
         assert tok.lstrip("+") in src[line - 1], (slide, where, tok)

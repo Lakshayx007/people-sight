@@ -4,7 +4,7 @@ sql_common.py
 Shared pieces for the metric modules.
 
 Every metric function takes a filter as a (sql_fragment, params) pair — exactly what
-filters.build_where() returns in Phase 5 — and returns (sql, params) with DuckDB named
+filters.build_where() returns — and returns (sql, params) with DuckDB named
 parameters ($name). The fragment uses bare column names that exist in the view it is applied to.
 """
 from __future__ import annotations
