@@ -448,10 +448,13 @@ _export_lock = threading.Lock()
 
 @app.get("/api/download/clean-data", include_in_schema=False)
 def download_clean_data():
-    """The clean data as one Excel workbook (built by pipeline/07_export_data.py; built here on first use if missing)."""
+    """The clean data as one Excel workbook (built by pipeline/07_export_data.py; rebuilt here if missing or out of date)."""
     with _export_lock:
-        if not EXPORT_FILE.exists():
-            done = subprocess.run([sys.executable, str(ROOT / "pipeline" / "07_export_data.py")], cwd=str(ROOT),
+        script = ROOT / "pipeline" / "07_export_data.py"
+        sources = [script, ROOT / "data" / "people.duckdb", ROOT / "data" / "clean" / "dq_log.csv"]
+        newest = max(p.stat().st_mtime for p in sources if p.exists())
+        if not EXPORT_FILE.exists() or EXPORT_FILE.stat().st_mtime < newest:
+            done = subprocess.run([sys.executable, str(script)], cwd=str(ROOT),
                                   capture_output=True, timeout=180)
             if done.returncode != 0 or not EXPORT_FILE.exists():
                 log.error("export build failed: %s", done.stderr.decode(errors="replace")[-2000:])

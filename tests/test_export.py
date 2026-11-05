@@ -23,7 +23,8 @@ def export(tmp_path_factory):
 
 @pytest.fixture(scope="module")
 def sheets(export):
-    return pd.read_excel(export.OUT, sheet_name=None)
+    return pd.read_excel(export.OUT, sheet_name=["Survey Responses", "Survey Headcount", "Requisitions", "Candidates",
+                                                 "Recruiters"])
 
 
 @pytest.fixture(scope="module")
@@ -33,72 +34,76 @@ def con():
     c.close()
 
 
-def test_sheets_are_named_tables(export):
+SURVEY = "Survey Responses"
+HEADCOUNT = "Survey Headcount"
+
+
+def test_sheets_and_tables(export):
     wb = load_workbook(export.OUT)
-    assert wb.sheetnames[0] == "About"
-    expected = {"Survey_Responses", "Survey_Headcount", "Requisitions", "Candidates", "Candidates_Set_Aside", "Recruiters",
-                "Cleaning_Log", "Raw_to_Clean", "Metric_Definitions", "Data_Dictionary"}
-    assert expected == set(wb.sheetnames[1:])
-    for name in expected:
-        assert list(wb[name].tables) == [name]
+    assert wb.sheetnames == ["Survey Responses", "Survey Headcount", "Requisitions", "Candidates", "Recruiters",
+                             "How It Was Cleaned"]
+    tables = {t for ws in wb for t in ws.tables}
+    assert tables == {"Survey_Responses", "Survey_Headcount", "Requisitions", "Candidates", "Recruiters", "Cleaning_Notes"}
+
+
+def test_every_header_has_a_note(export):
+    wb = load_workbook(export.OUT)
+    for name in wb.sheetnames[:-1]:
+        for cell in wb[name][1]:
+            assert cell.comment and cell.comment.text.strip(), f"{name}.{cell.value}"
+            assert "v_" not in cell.comment.text, f"{name}.{cell.value}"
 
 
 def test_survey_has_no_identifiers(sheets):
-    cols = {c.lower() for c in sheets["Survey_Responses"].columns}
-    banned = {"employee_id", "employee_name", "response_id", "respondent_key", "comment", "submitted_date", "grade",
-              "location", "performance_rating", "compa_band"}
-    assert not cols & banned
+    cols = {c.lower() for c in sheets[SURVEY].columns}
+    for banned in ["employee", "name", "response id", "respondent", "comment text", "submitted", "grade", "location",
+                   "rating", "compa", "ctc"]:
+        assert not any(banned in c for c in cols), banned
 
 
 def test_no_names_anywhere(sheets, con):
     names = {r[0] for r in con.execute("SELECT employee_name FROM v_interviewers").fetchall()}
     for name, df in sheets.items():
-        if name == "About":
-            continue
         values = set(df.astype(str).stack())
         assert not values & names, name
-        assert not any("name" == c.lower() or c.lower().endswith("_name") and c != "agency_name" and c != "Agency Name"
-                       for c in df.columns), name
 
 
 def test_survey_groups_are_at_least_5(export, sheets):
-    s = sheets["Survey_Responses"]
-    sizes = s.fillna("").groupby(["wave"] + export.SURVEY_QI).size()
+    s = sheets[SURVEY]
+    qi = [export.SURVEY_HEADERS[c][0] for c in export.SURVEY_QI]
+    sizes = s.fillna("").groupby(["Survey Wave"] + qi).size()
     assert sizes.min() >= export.K
 
 
-def test_survey_reconciles_with_database(sheets, con):
-    s = sheets["Survey_Responses"]
+def test_survey_reconciles_with_database(export, sheets, con):
+    s = sheets[SURVEY]
     db = con.execute("SELECT wave, count(*) n, sum(is_promoter) p, sum(is_detractor) d FROM v_survey GROUP BY wave").df()
     for r in db.itertuples():
-        w = s[s.wave == r.wave]
+        w = s[s["Survey Wave"] == export.WAVE_LABEL[r.wave]]
         assert len(w) == r.n
-        assert int(w.is_promoter.sum()) == r.p and int(w.is_detractor.sum()) == r.d
+        assert int(w["Promoter (1/0)"].sum()) == r.p and int(w["Detractor (1/0)"].sum()) == r.d
 
 
-def test_headcount_reconciles(sheets, con):
-    h = sheets["Survey_Headcount"]
+def test_headcount_reconciles(export, sheets, con):
+    h = sheets[HEADCOUNT]
     db = con.execute("SELECT wave, count(*) inv, sum(CASE WHEN responded THEN 1 ELSE 0 END) resp FROM v_invited GROUP BY wave").df()
     for r in db.itertuples():
-        w = h[h.wave == r.wave]
-        assert int(w.invited.sum()) == r.inv and int(w.responded.sum()) == r.resp
+        w = h[h["Survey Wave"] == export.WAVE_LABEL[r.wave]]
+        assert int(w.Invited.sum()) == r.inv and int(w.Responded.sum()) == r.resp
 
 
-def test_hiring_and_log_row_counts(sheets, con):
-    for sheet, view in [("Requisitions", "v_requisitions"), ("Candidates", "v_candidates"), ("Recruiters", "v_recruiters"),
-                        ("Cleaning_Log", "v_dq_log"), ("Raw_to_Clean", "v_reconciliation")]:
+def test_hiring_row_counts(sheets, con):
+    for sheet, view in [("Requisitions", "v_requisitions"), ("Candidates", "v_candidates"), ("Recruiters", "v_recruiters")]:
         assert len(sheets[sheet]) == con.execute(f"SELECT count(*) FROM {view}").fetchone()[0], sheet
 
 
-def test_every_column_is_documented(sheets):
-    d = sheets["Data_Dictionary"]
-    documented = set(zip(d.Sheet, d.Column))
-    for name, df in sheets.items():
-        if name in ("About", "Metric_Definitions", "Data_Dictionary"):
-            continue
-        for c in df.columns:
-            assert (name, c) in documented, f"{name}.{c}"
-    assert d.Meaning.notna().all()
+def test_cleaning_notes_cover_the_log(export):
+    dq = pd.read_csv(ROOT / "data" / "clean" / "dq_log.csv")
+    notes = export.cleaning_notes(dq)          # asserts every data-changing log row is explained
+    assert (notes.Records > 0).all()
+    for col in ["What we found", "What we did", "Why"]:
+        assert notes[col].str.len().gt(3).all()
+        assert not notes[col].str.contains(r"—|\b[a-z]+_[a-z]+\b", regex=True).any(), col
 
 
 def test_k_anonymise_tops_up_small_group(export):

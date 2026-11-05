@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import {
-  Ban, BarChart3, ChevronDown, Copy, Download, FileSpreadsheet, Flag, Lightbulb, ListChecks, Lock, ShieldCheck, SpellCheck, Wrench,
+  Ban, ChevronDown, Copy, Download, FileSpreadsheet, Flag, Lightbulb, ListChecks, Lock, ShieldCheck, SpellCheck, Wrench,
 } from 'lucide-react';
 import PageHeader from '../components/PageHeader';
 import Panel from '../components/Panel';
@@ -64,9 +64,8 @@ export default function DataQuality() {
               <h2 className="font-display text-xl font-semibold">Download the clean data</h2>
             </div>
             <p className="mt-3 max-w-2xl text-[13.5px] leading-6">
-              One Excel workbook with the cleaned survey and hiring tables, the full cleaning log, raw-to-clean row counts,
-              metric definitions with ready-made Power BI measures, and a data dictionary. Every sheet is a named table, so
-              Power BI and Excel pick it up directly.
+              The cleaned survey and hiring data in one Excel file, with a sheet explaining what was wrong in the raw
+              spreadsheets, what we changed and why. Opens straight into Excel or Power BI.
             </p>
             <a href="/api/download/clean-data" download
               className="mt-4 inline-flex items-center gap-2 rounded-xl bg-accent px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:opacity-90">
@@ -74,10 +73,9 @@ export default function DataQuality() {
             </a>
           </div>
           <ul className="space-y-2.5 text-[13px] leading-5">
-            <li className="flex gap-2.5"><ListChecks className="mt-0.5 h-4 w-4 shrink-0 text-accent" /><span><b>Clean tables:</b> survey responses, survey headcount, requisitions, candidates, recruiters.</span></li>
-            <li className="flex gap-2.5"><Wrench className="mt-0.5 h-4 w-4 shrink-0 text-accent" /><span><b>How it was cleaned:</b> every check, the rows it touched, what we did and why.</span></li>
-            <li className="flex gap-2.5"><BarChart3 className="mt-0.5 h-4 w-4 shrink-0 text-accent" /><span><b>Ready for Power BI:</b> relationships and DAX measures for eNPS, response rate, time to fill and more.</span></li>
-            <li className="flex gap-2.5"><Lock className="mt-0.5 h-4 w-4 shrink-0 text-accent" /><span><b>Anonymous:</b> no names or employee IDs on survey rows, and no group of survey answers smaller than 5.</span></li>
+            <li className="flex gap-2.5"><ListChecks className="mt-0.5 h-4 w-4 shrink-0 text-accent" /><span><b>Clean data:</b> survey responses, survey headcount, requisitions, candidates, recruiters.</span></li>
+            <li className="flex gap-2.5"><Wrench className="mt-0.5 h-4 w-4 shrink-0 text-accent" /><span><b>How it was cleaned:</b> each problem we found, what we did and why.</span></li>
+            <li className="flex gap-2.5"><Lock className="mt-0.5 h-4 w-4 shrink-0 text-accent" /><span><b>Anonymous:</b> no names or IDs on survey answers, and no group smaller than 5.</span></li>
           </ul>
         </div>
       </FadeIn>

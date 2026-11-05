@@ -66,11 +66,11 @@ carries the top findings with a [number trace](docs/deck_number_trace.md) back t
   numbers on the chart.
 - **Explore and verify.** Filters and drill-down on every chart, the exact SQL behind each one, and a base count (n)
   on every figure.
-- **Take the data with you.** One Excel workbook holds the clean survey and hiring tables, the cleaning log, raw-to-clean
-  counts, metric definitions with ready-made Power BI (DAX) measures and a data dictionary. Every sheet is a named table.
+- **Take the data with you.** The clean survey and hiring data download as one Excel file, with a sheet on what was
+  wrong in the raw spreadsheets, what was changed and why. It opens straight into Excel or Power BI.
 - **Privacy by design.** Survey answers carry no names or employee IDs, groups under five people are hidden, and
-  questions about a named person's survey answers are refused. In the download, survey rows carry no identifiers and
-  every combination of describing fields covers at least five responses.
+  questions about a named person's survey answers are refused. In the download, survey answers carry no names or IDs and
+  no group is smaller than five.
 
 ## How it works
 
