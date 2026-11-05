@@ -6,6 +6,7 @@ pip install -r requirements.txt
 python pipeline/02_clean_enps.py
 python pipeline/03_clean_recruitment.py
 python pipeline/04_build_db.py
+python pipeline/07_export_data.py
 cd frontend
 npm ci
 npm run build

@@ -16,6 +16,7 @@ frontend/dist/
 
 # generated data
 data/clean/
+data/export/
 *.duckdb
 *.duckdb.wal
 
@@ -34,3 +35,4 @@ Thumbs.db
 # local transfer bundles
 *.bundle
 .nm_trash/
+

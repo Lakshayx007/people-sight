@@ -156,10 +156,11 @@ export function heatmapOption(rows, p, { mobile }) {
     return tipHead(`${r.row_value} × ${r.col_value}`) + tipRow('eNPS', scoreOr(r.enps, r.suppressed)) + tipRow('n', fmtInt(r.n))
       + '<div style="margin-top:4px;opacity:.6;font-size:11px">Click to drill down</div>';
   };
+  const tilt = xs.length > 4;   // few columns (e.g. after a drill-down): straight, full labels
   return {
-    grid: { left: 8, right: 12, top: 6, bottom: 74, containLabel: true },
+    grid: { left: 8, right: 12, top: 6, bottom: tilt ? 74 : 44, containLabel: true },
     tooltip: { trigger: 'item', formatter: tip },
-    xAxis: { type: 'category', data: xs, splitArea: { show: false }, axisLabel: { rotate: 35, interval: 0, fontSize: 10, formatter: (v) => truncate(v, 16) } },
+    xAxis: { type: 'category', data: xs, splitArea: { show: false }, axisLabel: { rotate: tilt ? 35 : 0, interval: 0, fontSize: tilt ? 10 : 11, formatter: (v) => truncate(v, tilt ? 16 : 28) } },
     yAxis: { type: 'category', data: ys, inverse: true, axisLabel: { fontSize: 11, formatter: (v) => truncate(v, mobile ? 12 : 18) } },
     visualMap: {
       seriesIndex: 0, min: -50, max: 50, orient: 'horizontal', left: 'center', bottom: 0, itemWidth: 10, itemHeight: 140,

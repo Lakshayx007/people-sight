@@ -138,13 +138,13 @@ export default function Sentiment() {
         </Panel>
 
         <Panel className="lg:col-span-7"
-          title={`eNPS by thread × function (${hmWave === 'Oct' ? 'October' : 'April'})`}
+          title={`eNPS by thread × function (${hmWave === 'Oct' ? 'October' : 'April'} survey)`}
           subtitle="Red = negative, blue = positive eNPS; grey n<5 = fewer than 5 respondents; blank = no employees in that combination (corporate functions sit in Central). Click a cell to drill down."
           n={heat.n} insightRows={heat.data} takeaway={heat.takeaway} sql={heat.sql} loading={heat.loading} error={heat.error} empty={empty(heat)}
           actions={(
-            <select value={hmWave} onChange={(e) => setHmWave(e.target.value)} aria-label="Wave"
+            <select value={hmWave} onChange={(e) => setHmWave(e.target.value)} aria-label="Survey wave" title="Survey wave"
               className="h-6 rounded-md border border-border bg-surface px-1.5 text-[11px] font-medium outline-none">
-              <option value="Oct">October</option><option value="Apr">April</option>
+              <option value="Oct">October 2026 survey</option><option value="Apr">April 2026 survey</option>
             </select>
           )}>
           {(h) => heat.data && (
@@ -156,7 +156,7 @@ export default function Sentiment() {
         </Panel>
 
         <Panel className="lg:col-span-5"
-          title="Which drivers matter most? Importance vs score (October)"
+          title="Which drivers matter most? Importance vs score (October survey)"
           subtitle="Right = more strongly linked to eNPS; low = lower score. Dashed lines = average of the five drivers."
           n={imp.n} insightRows={imp.data} takeaway={imp.takeaway} sql={imp.sql} loading={imp.loading} error={imp.error} empty={empty(imp) || (imp.data && imp.data.every((r) => r.suppressed))}>
           {(h) => imp.data && <EChart option={quadrantOption(imp.data, p)} height={h} />}

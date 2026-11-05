@@ -13,6 +13,8 @@ from __future__ import annotations
 
 import logging
 import os
+import subprocess
+import sys
 import threading
 import time
 from collections import defaultdict, deque
@@ -438,6 +440,24 @@ def dq_reconciliation(dataset: str | None = DQ_DATASET):
     sql = f'SELECT * FROM v_reconciliation WHERE {where} ORDER BY dataset, sheet, "order"'
     full = db.annotate(sql, params)
     return {"data": db.query(full, params), "sql": full, "n": db.scalar(f"SELECT count(*) FROM v_reconciliation WHERE {where}", params)}
+
+
+EXPORT_FILE = ROOT / "data" / "export" / "People_Sight_Clean_Data.xlsx"
+_export_lock = threading.Lock()
+
+
+@app.get("/api/download/clean-data", include_in_schema=False)
+def download_clean_data():
+    """The clean data as one Excel workbook (built by pipeline/07_export_data.py; built here on first use if missing)."""
+    with _export_lock:
+        if not EXPORT_FILE.exists():
+            done = subprocess.run([sys.executable, str(ROOT / "pipeline" / "07_export_data.py")], cwd=str(ROOT),
+                                  capture_output=True, timeout=180)
+            if done.returncode != 0 or not EXPORT_FILE.exists():
+                log.error("export build failed: %s", done.stderr.decode(errors="replace")[-2000:])
+                return JSONResponse({"detail": "The download is not available right now."}, status_code=503)
+    return FileResponse(str(EXPORT_FILE), filename=EXPORT_FILE.name,
+                        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
 
 
 @app.get("/api/health")

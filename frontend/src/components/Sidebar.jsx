@@ -1,5 +1,5 @@
 import { Link, NavLink } from 'react-router-dom';
-import { Briefcase, ClipboardCheck, Home, Moon, Smile, Sparkles, Sun, Users, X } from 'lucide-react';
+import { Briefcase, ClipboardCheck, Download, Home, Moon, Smile, Sparkles, Sun, Users, X } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
 
 // Sidebar navigation with a mobile overlay.
@@ -54,6 +54,10 @@ export default function Sidebar({ open, onClose, onAsk }) {
             className="mt-4 flex w-full items-center gap-3 rounded-lg bg-accent px-3 py-2.5 text-sm font-medium text-white shadow-sm hover:opacity-90">
             <Sparkles className="h-4 w-4" /> Ask the data
           </button>
+          <a href="/api/download/clean-data" download
+            className="mt-2 flex w-full items-center gap-3 rounded-lg border border-border px-3 py-2.5 text-sm font-medium text-muted hover:bg-subtle hover:text-primary">
+            <Download className="h-4 w-4" /> Download clean data
+          </a>
         </nav>
 
         <div className="space-y-3 border-t border-border p-4">

@@ -12,7 +12,7 @@ anyone can ask their own questions of the data.
 |---|---|
 | **Dashboards** | [Overview](https://people-sight.onrender.com) · [Employee sentiment](https://people-sight.onrender.com/sentiment) · [Hiring](https://people-sight.onrender.com/hiring) · [Data quality](https://people-sight.onrender.com/data-quality) |
 | **Insights** | [Findings and recommendations](docs/insights.md) · [Leadership deck](docs/Porter_People_Insights.pptx) · [Data quality note](docs/data_quality.md) |
-| **Data** | Sample dataset, as of 31-Oct-2026 |
+| **Data** | Sample dataset, as of 31-Oct-2026 · [Download the clean data (Excel, ready for Power BI)](https://people-sight.onrender.com/api/download/clean-data) |
 
 ---
 
@@ -56,7 +56,7 @@ carries the top findings with a [number trace](docs/deck_number_trace.md) back t
 </tr>
 <tr>
 <td><b>Ask the Data.</b> A question in everyday language becomes one read-only query, a chart and a one-line explanation, with the query shown.</td>
-<td><b>Data quality.</b> What was fixed before analysis and why it matters, raw-to-clean row counts, and the full cleaning log.</td>
+<td><b>Data quality.</b> What was fixed before analysis and why it matters, raw-to-clean row counts, the full cleaning log, and the clean data as an Excel download.</td>
 </tr>
 </table>
 
@@ -66,8 +66,11 @@ carries the top findings with a [number trace](docs/deck_number_trace.md) back t
   numbers on the chart.
 - **Explore and verify.** Filters and drill-down on every chart, the exact SQL behind each one, and a base count (n)
   on every figure.
+- **Take the data with you.** One Excel workbook holds the clean survey and hiring tables, the cleaning log, raw-to-clean
+  counts, metric definitions with ready-made Power BI (DAX) measures and a data dictionary. Every sheet is a named table.
 - **Privacy by design.** Survey answers carry no names or employee IDs, groups under five people are hidden, and
-  questions about a named person's survey answers are refused.
+  questions about a named person's survey answers are refused. In the download, survey rows carry no identifiers and
+  every combination of describing fields covers at least five responses.
 
 ## How it works
 
@@ -102,7 +105,7 @@ Raw workbooks ──► Cleaning pipeline ──► Clean tables + cleaning log 
 ```
 backend/    API, metric definitions in SQL, filter layer, Ask the Data, chart takeaways
 frontend/   React application (dashboards, landing page, Ask the Data panel)
-pipeline/   profiling, cleaning, database build, metric reference, insights, deck
+pipeline/   profiling, cleaning, database build, metric reference, insights, deck, clean-data export
 data/raw/   source workbooks (read-only)
 docs/       insights, deck, data quality, metric definitions, charts, screenshots
 tests/      data, metric, API, Ask the Data, insight and deck checks
@@ -111,7 +114,7 @@ tests/      data, metric, API, Ask the Data, insight and deck checks
 ## Deployment
 
 Deployed on Render as a single web service from `render.yaml`. Each deploy installs the pinned requirements, rebuilds
-the database from `data/raw/` with the pipeline, and builds the frontend; pushes to `main` deploy automatically.
+the database and the clean-data workbook from `data/raw/` with the pipeline, and builds the frontend; pushes to `main` deploy automatically.
 `GROQ_API_KEY` is set in the Render environment; without it the dashboards work fully and the AI features are off.
 
 To rebuild the database and analysis outputs:
@@ -119,6 +122,7 @@ To rebuild the database and analysis outputs:
 ```bash
 pip install -r requirements.txt
 python pipeline/02_clean_enps.py && python pipeline/03_clean_recruitment.py && python pipeline/04_build_db.py
+python pipeline/07_export_data.py
 python pipeline/check_metrics.py && python pipeline/05_insights.py && python pipeline/06_build_deck.py
 pytest tests
 ```
