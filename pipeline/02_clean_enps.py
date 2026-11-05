@@ -311,7 +311,7 @@ for q in ["q2", "q3", "q4", "q5", "q6"]:
     dq.log(RS, q.upper(), "Blank answer", int(r[q].isna().sum()), "Left blank; excluded from that driver's mean / % favourable only")
     dq.log(RS, q.upper(), "Outside 1-5", oor, "Validated" if oor == 0 else "Set blank")
 
-# exclusions — first reason wins, in this order
+# exclusions: first reason wins, in this order
 r["exclusion_reason"] = None
 
 
