@@ -17,8 +17,8 @@ import {
   agingOption, funnelOption, interviewersOption, monthLabel, monthlyOption, offersOption, stageTimeOption, ttfGradeOption,
 } from './hiringCharts';
 
-const days = (v) => (isNum(v) ? `${Number.isInteger(v) ? v : v.toFixed(1)} d` : '—');
-const inr = (v) => (isNum(v) && v > 0 ? `₹${Math.round(v).toLocaleString('en-IN')}` : '—');
+const days = (v) => (isNum(v) ? `${Number.isInteger(v) ? v : v.toFixed(1)} d` : '–');
+const inr = (v) => (isNum(v) && v > 0 ? `₹${Math.round(v).toLocaleString('en-IN')}` : '–');
 
 export default function Hiring() {
   const { filters, drill } = useFilters();
@@ -60,7 +60,7 @@ export default function Hiring() {
     const d = offSum.data?.find((r) => r.outcome === 'Declined');
     if (!a || !d) return null;
     return `Median offered ÷ expected CTC: accepted ${a.median_offer_to_expected.toFixed(2)} (n = ${fmtInt(a.n)}) vs declined ${d.median_offer_to_expected.toFixed(2)} (n = ${fmtInt(d.n)}). `
-      + `Median offered ÷ budget max: ${a.median_offer_to_budget.toFixed(2)} vs ${d.median_offer_to_budget.toFixed(2)} — offers sit well under budget.`;
+      + `Median offered ÷ budget max: ${a.median_offer_to_budget.toFixed(2)} vs ${d.median_offer_to_budget.toFixed(2)}. Offers sit well under budget.`;
   })();
 
   return (
@@ -149,7 +149,7 @@ export default function Hiring() {
         <Panel className="lg:col-span-12" title="Recruiters: fair comparison per assigned req, plus attainment vs target" height={0}
           subtitle="Compare recruiters on the per-req columns (filled %, median TTF, % within SLA, accepted offers per req). Attainment = accepted offers per month (Apr–Oct, 7 months) ÷ monthly target, shown counting all accepted offers and excluding backed-out candidates. Click a row to filter."
           n={fair.n} insightRows={fair.data} takeaway={fair.takeaway} nLabel="n reqs" sql={fair.sql} loading={fair.loading || attain.loading} error={fair.error || attain.error} empty={empty(fair)}
-          footer={<p className="mt-2 text-[11px] leading-4 text-muted"><b>Note:</b> attainment depends on how many reqs a recruiter is given — a recruiter with few reqs cannot reach a fixed monthly offer target, so low attainment can mean low load rather than low performance.</p>}>
+          footer={<p className="mt-2 text-[11px] leading-4 text-muted"><b>Note:</b> attainment depends on how many reqs a recruiter is given; a recruiter with few reqs cannot reach a fixed monthly offer target, so low attainment can mean low load rather than low performance.</p>}>
           {() => fair.data && (
             <DataTable rows={recruiterRows} dense rowKey={(r) => r.recruiter} onRowClick={(r) => drill({ recruiter: r.recruiter })}
               defaultSort={{ key: 'reqs_assigned', dir: 'desc' }}
@@ -160,7 +160,7 @@ export default function Hiring() {
                 { key: 'median_ttf_days', label: 'Median TTF', headWidth: 64, align: 'right', format: days },
                 { key: 'pct_filled_within_sla', label: 'Filled within SLA', headWidth: 72, align: 'right', format: (v) => fmtPct(v) },
                 { key: 'open_past_sla', label: 'Open past SLA', headWidth: 64, align: 'right', format: fmtInt },
-                { key: 'accepted_per_assigned_req', label: 'Accepted offers per req', headWidth: 84, align: 'right', format: (v) => (isNum(v) ? v.toFixed(2) : '—') },
+                { key: 'accepted_per_assigned_req', label: 'Accepted offers per req', headWidth: 84, align: 'right', format: (v) => (isNum(v) ? v.toFixed(2) : '–') },
                 { key: 'monthly_offer_target', label: 'Target per month', headWidth: 64, align: 'right', format: fmtInt },
                 { key: 'attainment_all_pct', label: 'Attainment (all accepted)', headWidth: 96, align: 'right', format: (v) => fmtPct(v), bar: { max: 100, color: p.accent } },
                 { key: 'attainment_excl_bo_pct', label: 'Attainment (excl. backed out)', headWidth: 96, align: 'right', format: (v) => fmtPct(v) },

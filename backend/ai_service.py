@@ -138,14 +138,14 @@ def chat_json(messages: list[dict], max_tokens: int = 3000) -> dict:
 
 
 BLURB_SYSTEM = """You explain ONE dashboard chart to a busy manager who is not a data analyst.
-Write 2-3 short sentences in plain English:
-  1) what the chart shows, in everyday words (say "eNPS — how likely people are to recommend Porter as a place to
-     work" the first time you use the term);
+Write 2-3 short, clear sentences:
+  1) what the chart shows, in everyday words (the first time you use "eNPS", add "how likely people are to recommend
+     Porter as a place to work");
   2) the single most important thing it reveals;
   3) one caution or next question (small groups, few answers, or what to look at next).
 Rules: use ONLY numbers that appear in the rows or the provided summary; never invent or compute new numbers; no
 jargon (no "n", "segment", "metric"); never name or guess individuals; if a row is marked suppressed say the group is
-too small to show. Return JSON: {"blurb": "<2-3 sentences>"}"""
+too small to show; do not use em dashes. Return JSON: {"blurb": "<2-3 sentences>"}"""
 
 
 def chart_blurb(title: str, rows: list[dict], context: str = "") -> str:

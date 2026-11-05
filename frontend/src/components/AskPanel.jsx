@@ -10,7 +10,7 @@ import SqlBlock from './SqlBlock';
 import { fmtInt, isNum } from '../lib/format';
 
 /**
- * Ask the Data — slide-in panel.
+ * Ask the Data: slide-in panel.
  * The question goes to POST /api/ask; the backend writes and validates ONE read-only SQL query and runs it.
  * The panel shows the chart Groq specified, the explanation, the exact SQL and the rows.
  */
@@ -82,7 +82,7 @@ export default function AskPanel({ open, onClose }) {
             <div>
               <h2 className="text-sm font-semibold">Ask the data</h2>
               <p className="text-[11px] text-muted">
-                {status == null ? 'Checking…' : status.available ? `Plain English → SQL → chart · ${status.model}` : 'Needs a Groq API key'}
+                {status == null ? 'Checking…' : status.available ? `Question → SQL → chart · ${status.model}` : 'Needs a Groq API key'}
               </p>
             </div>
           </div>
@@ -171,7 +171,7 @@ export default function AskPanel({ open, onClose }) {
                   {res.data.length > 0 && (
                     <DataTable dense maxHeight={240} rows={res.data}
                       columns={res.columns.map((c) => ({ key: c, label: c, align: res.data.some((r) => isNum(r[c])) ? 'right' : 'left',
-                        format: (v, r) => (v == null ? (r.suppressed ? <span className="text-muted">n&lt;5</span> : '—') : typeof v === 'boolean' ? String(v) : isNum(v) ? v.toLocaleString('en-IN', { maximumFractionDigits: 2 }) : String(v)) }))} />
+                        format: (v, r) => (v == null ? (r.suppressed ? <span className="text-muted">n&lt;5</span> : '–') : typeof v === 'boolean' ? String(v) : isNum(v) ? v.toLocaleString('en-IN', { maximumFractionDigits: 2 }) : String(v)) }))} />
                   )}
                 </>
               )}

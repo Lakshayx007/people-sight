@@ -10,7 +10,7 @@ import { FadeIn } from '../lib/motion';
 export const CHART_H = 300;
 
 /**
- * Chart card. Shows: title + plain-language subtitle, a "What this shows" sentence written by the backend from the
+ * Chart card. Shows: title + subtitle, a "What this shows" sentence written by the backend from the
  * same rows (always available, no AI), an optional "What does this chart say?" AI explanation (only when Groq is
  * configured; written only from the rows shown), n badge, Show SQL, enlarge, and loading / error / empty states.
  * `children` may be a function (height) => node so the same chart can render inside the zoom modal.
@@ -73,7 +73,7 @@ export default function Panel({
             {canExplain && (
               <button onClick={explain} disabled={aiLoading}
                 className="flex items-center gap-1 rounded-full border border-accent/40 bg-accent-soft px-2.5 py-0.5 text-[11px] font-medium text-accent hover:border-accent disabled:opacity-60"
-                title="Get a plain-English explanation of this chart">
+                title="Get a short summary of this chart">
                 <Sparkles className="h-3 w-3" /> What does this chart say?
               </button>
             )}

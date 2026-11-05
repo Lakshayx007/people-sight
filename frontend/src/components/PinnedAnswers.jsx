@@ -28,7 +28,7 @@ export default function PinnedAnswers({ dataset }) {
               </div>
             </div>
             {p.chart_spec?.chart_type === 'table'
-              ? <p className="text-xs text-muted">{p.data.length} rows (table answer — open SQL to re-run).</p>
+              ? <p className="text-xs text-muted">{p.data.length} rows (table answer; open the SQL to re-run).</p>
               : <AskChart spec={p.chart_spec} rows={p.data} columns={p.columns} height={240} />}
             {sqlOpen === p.id && <SqlBlock sql={p.sql} />}
           </div>

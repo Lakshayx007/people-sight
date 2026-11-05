@@ -16,7 +16,7 @@ export default function SqlBlock({ sql }) {
       <button onClick={copy} className="absolute right-2 top-2 flex items-center gap-1 rounded-md border border-border bg-surface px-2 py-1 text-[11px] text-muted hover:text-primary">
         {copied ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />} {copied ? 'Copied' : 'Copy'}
       </button>
-      <pre className="sql max-h-64 overflow-auto whitespace-pre p-3 pr-20 text-primary">{sql || '—'}</pre>
+      <pre className="sql max-h-64 overflow-auto whitespace-pre p-3 pr-20 text-primary">{sql || '–'}</pre>
     </div>
   );
 }

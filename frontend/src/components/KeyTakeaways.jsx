@@ -10,7 +10,7 @@ const TONE = {
   neutral: { icon: Info, cls: 'text-accent', ring: 'bg-accent-soft' },
 };
 
-/** Three plain-language headline sentences for a page, written by the backend from the metric SQL (with filters). */
+/** Three headline takeaways for a page, written by the backend from the metric SQL (with filters). */
 export default function KeyTakeaways({ endpoint }) {
   const { filters, drill } = useFilters();
   const t = useApi(endpoint, { filters });
@@ -18,7 +18,7 @@ export default function KeyTakeaways({ endpoint }) {
   return (
     <section aria-label="Key takeaways">
       <div className="mb-2 flex items-baseline gap-2">
-        <h2 className="text-xs font-semibold uppercase tracking-[0.14em] text-muted">In plain words</h2>
+        <h2 className="text-xs font-semibold uppercase tracking-[0.14em] text-muted">Key takeaways</h2>
         <span className="text-[11px] text-muted">updates with your filters</span>
       </div>
       {t.loading && !t.data ? (

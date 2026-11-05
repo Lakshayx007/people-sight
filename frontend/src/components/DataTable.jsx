@@ -53,7 +53,7 @@ export default function DataTable({ columns, rows = [], onRowClick, defaultSort,
               className={`border-b border-border last:border-0 ${onRowClick ? 'cursor-pointer hover:bg-accent-soft/50' : ''} ${highlight?.(r) ? 'bg-warn-soft/40' : ''}`}>
               {columns.map((c) => {
                 const v = r[c.key];
-                const content = c.format ? c.format(v, r) : (v ?? '—');
+                const content = c.format ? c.format(v, r) : (v ?? '–');
                 return (
                   <td key={c.key} className={`${pad} align-middle tabular-nums ${c.align === 'right' ? 'text-right' : 'text-left'} ${c.wrap ? 'whitespace-normal' : 'whitespace-nowrap'}`}
                     style={c.wrap ? { maxWidth: c.wrap, minWidth: Math.min(c.wrap, 90) } : undefined}>

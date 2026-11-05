@@ -29,7 +29,7 @@ export function dumbbellOption(rows, p, { mobile }) {
         return tipHead(r.segment)
           + tipRow('April eNPS', `${scoreOr(r.enps_apr, r.suppressed_apr)} (n = ${fmtInt(r.n_apr)})`)
           + tipRow('October eNPS', `${scoreOr(r.enps_oct, r.suppressed_oct)} (n = ${fmtInt(r.n_oct)})`)
-          + tipRow('Change', isNum(r.enps_change) ? `${fmtSigned(r.enps_change)} pts` : '—')
+          + tipRow('Change', isNum(r.enps_change) ? `${fmtSigned(r.enps_change)} pts` : '–')
           + tipRow('Response rate Apr / Oct', `${fmtPct(r.response_rate_apr_pct)} / ${fmtPct(r.response_rate_oct_pct)}`)
           + (low(r) ? lowNote : '') + '<div style="margin-top:4px;opacity:.6;font-size:11px">Click to drill down</div>';
       },
@@ -94,9 +94,9 @@ export function driversOption(rows, p, { mobile }) {
       formatter: (prm) => {
         const r = prm.data.r;
         if (!r) return '';
-        return tipHead(`${DRIVER_LABEL(r)} — ${prm.seriesName}`)
+        return tipHead(`${DRIVER_LABEL(r)} · ${prm.seriesName}`)
           + tipRow('% favourable (4–5)', scoreOr(r.pct_favourable, r.suppressed, fmtPct))
-          + tipRow('Mean score (1–5)', scoreOr(r.mean_score, r.suppressed, (v) => (isNum(v) ? v.toFixed(2) : '—')))
+          + tipRow('Mean score (1–5)', scoreOr(r.mean_score, r.suppressed, (v) => (isNum(v) ? v.toFixed(2) : '–')))
           + tipRow('n answering', fmtInt(r.n));
       },
     },
@@ -189,7 +189,7 @@ export function themesOption(rows, p) {
       formatter: (prm) => {
         const r = prm.data.r;
         if (!r) return '';
-        return tipHead(`${r.theme} — ${prm.seriesName}`) + tipRow('% of respondents', scoreOr(r.pct_of_respondents, r.suppressed, fmtPct))
+        return tipHead(`${r.theme} · ${prm.seriesName}`) + tipRow('% of respondents', scoreOr(r.pct_of_respondents, r.suppressed, fmtPct))
           + tipRow('Comments', r.suppressed ? 'n&lt;5' : fmtInt(r.comments)) + tipRow('Respondents (n)', fmtInt(r.n));
       },
     },
@@ -220,7 +220,7 @@ export function mixOption(rows, p) {
       formatter: (ps) => {
         const r = ps[0].data.r;
         if (r.suppressed) return tipHead(ps[0].axisValue) + `n&lt;5 (n = ${r.n})`;
-        return tipHead(`${ps[0].axisValue} — eNPS ${fmtSigned(r.enps)}`) + tipRow('Promoters (9–10)', fmtPct(r.pct_promoters))
+        return tipHead(`${ps[0].axisValue} · eNPS ${fmtSigned(r.enps)}`) + tipRow('Promoters (9–10)', fmtPct(r.pct_promoters))
           + tipRow('Passives (7–8)', fmtPct(r.pct_passives)) + tipRow('Detractors (0–6)', fmtPct(r.pct_detractors))
           + tipRow('Respondents (n)', fmtInt(r.n)) + tipRow('Response rate', fmtPct(r.response_rate_pct)) + (r.low_response ? lowNote : '');
       },
@@ -272,9 +272,9 @@ export function nonResponseOption(rows, p, { mobile }) {
       trigger: 'axis', axisPointer: { type: 'shadow' },
       formatter: (ps) => {
         const r = byName[ps[0].axisValue];
-        return tipHead(`${r.segment} — April eNPS`) + tipRow('Answered October', `${scoreOr(r.apr_enps_oct_respondents, r.n_oct_respondents < 5)} (n = ${fmtInt(r.n_oct_respondents)})`)
+        return tipHead(`${r.segment} · April eNPS`) + tipRow('Answered October', `${scoreOr(r.apr_enps_oct_respondents, r.n_oct_respondents < 5)} (n = ${fmtInt(r.n_oct_respondents)})`)
           + tipRow('Skipped October', `${scoreOr(r.apr_enps_oct_nonrespondents, r.n_oct_nonrespondents < 5)} (n = ${fmtInt(r.n_oct_nonrespondents)})`)
-          + tipRow('Gap (skipped − answered)', isNum(r.gap_nonresp_minus_resp) ? `${fmtSigned(r.gap_nonresp_minus_resp)} pts` : '—')
+          + tipRow('Gap (skipped − answered)', isNum(r.gap_nonresp_minus_resp) ? `${fmtSigned(r.gap_nonresp_minus_resp)} pts` : '–')
           + tipRow('October response rate', fmtPct(r.oct_response_rate_pct)) + (r.low_response ? lowNote : '');
       },
     },

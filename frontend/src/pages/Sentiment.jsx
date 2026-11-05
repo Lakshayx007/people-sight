@@ -85,7 +85,7 @@ export default function Sentiment() {
           value={fmtSigned(k.enps_apr)} suppressed={kpis.data && !isNum(k.enps_apr)} tone={k.enps_apr < 0 ? 'negative' : undefined}
           note={`n = ${fmtInt(k.n_apr)} respondents`} />
         <Metric label="Change" icon={TrendingDown} loading={kpis.loading && !kpis.data}
-          value={isNum(k.enps_change) ? `${fmtSigned(k.enps_change)} pts` : '—'} tone={k.enps_change < 0 ? 'negative' : 'accent'}
+          value={isNum(k.enps_change) ? `${fmtSigned(k.enps_change)} pts` : '–'} tone={k.enps_change < 0 ? 'negative' : 'accent'}
           note="October minus April"
           sub={isNum(pn.enps_change) ? `Same ${fmtInt(pn.n)} people: ${fmtSigned(pn.enps_change)} pts` : `Both-wave panel: n = ${fmtInt(pn.n)}`} />
         <Metric label="Response rate" icon={Users} loading={kpis.loading && !kpis.data}

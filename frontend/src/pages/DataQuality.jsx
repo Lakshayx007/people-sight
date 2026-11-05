@@ -35,7 +35,7 @@ export default function DataQuality() {
     <div className="mx-auto max-w-[1400px] space-y-6 p-3 sm:p-5 lg:p-8">
       <PageHeader eyebrow="Data quality" title="Can you trust these numbers?">
         Before any number on this site was calculated, the raw spreadsheets were checked and cleaned. This page explains
-        what we found and fixed, in plain words. Every step is recorded, so anyone can audit it.
+        what we found and fixed. Every step is recorded, so anyone can audit it.
       </PageHeader>
 
       <div className="flex flex-wrap gap-2">
@@ -153,7 +153,7 @@ export default function DataQuality() {
                       { key: 'issue', label: 'What we found', wrap: 250 },
                       { key: 'rows_affected', label: 'Rows', align: 'right', format: fmtInt },
                       { key: 'treatment', label: 'What we did', wrap: 210 },
-                      { key: 'assumption', label: 'Why / assumption', wrap: 230, format: (v) => v || '—' },
+                      { key: 'assumption', label: 'Why / assumption', wrap: 230, format: (v) => v || '–' },
                     ]} />
                 )}
               </div>

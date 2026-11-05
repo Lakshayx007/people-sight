@@ -1,7 +1,7 @@
 """
 narrative.py
 ------------
-Plain-language takeaways for people who are not analysts. Every sentence is written by code from the rows the
+Takeaways for people who are not analysts. Every sentence is written by code from the rows the
 metric SQL already returned (no LLM, no new numbers), so it is always available and always matches the chart.
 
   takeaway(endpoint, rows, ctx)  -> one sentence for a panel, or None
@@ -24,19 +24,19 @@ def _ok(v) -> bool:
 
 
 def sgn(v, d: int = 1) -> str:
-    return "—" if not _ok(v) else (f"+{v:.{d}f}" if v > 0 else f"−{abs(v):.{d}f}" if v < 0 else f"{0:.{d}f}")
+    return "–" if not _ok(v) else (f"+{v:.{d}f}" if v > 0 else f"−{abs(v):.{d}f}" if v < 0 else f"{0:.{d}f}")
 
 
 def pct(v, d: int = 1) -> str:
-    return "—" if not _ok(v) else f"{v:.{d}f}%"
+    return "–" if not _ok(v) else f"{v:.{d}f}%"
 
 
 def num(v) -> str:
-    return "—" if not _ok(v) else f"{int(round(v)):,}"
+    return "–" if not _ok(v) else f"{int(round(v)):,}"
 
 
 def days(v) -> str:
-    return "—" if not _ok(v) else f"{v:.0f} day" + ("" if round(v) == 1 else "s")
+    return "–" if not _ok(v) else f"{v:.0f} day" + ("" if round(v) == 1 else "s")
 
 
 DIM_WORDS = {"thread": "thread", "function": "function", "job_family": "job family", "grade": "grade",
@@ -100,7 +100,7 @@ def enps_driver_importance(rows, ctx):
     low = min(ok, key=lambda r: r["mean_score"])
     if imp["label"] == low["label"]:
         return (f"{imp['label']} matters most for whether people would recommend Porter, and it also scores lowest "
-                "— the clearest place to act.")
+                "so it is the clearest place to act.")
     return (f"{imp['label']} matters most for whether people would recommend Porter; {low['label']} scores lowest. "
             "Fix what is both important and low-scoring first (bottom-right of the chart).")
 
@@ -147,7 +147,7 @@ def enps_exits(rows, ctx):
     if "Detractor" not in g or "Promoter" not in g:
         return None
     d, p = g["Detractor"]["pct_voluntary_exit"], g["Promoter"]["pct_voluntary_exit"]
-    ratio = f" — about {d / p:.0f} times as often" if _ok(d) and _ok(p) and p > 0 and d / p >= 1.5 else ""
+    ratio = f", about {d / p:.0f} times as often" if _ok(d) and _ok(p) and p > 0 and d / p >= 1.5 else ""
     return (f"{pct(d)} of people who were unhappy in April (detractors) chose to leave by October, against {pct(p)} of "
             f"promoters{ratio}. Low scores are an early warning of resignations.")
 
@@ -188,7 +188,7 @@ def hiring_funnel(rows, ctx):
     first, last = rows[0], rows[-1]
     drops = [r for r in rows[1:] if _ok(r.get("pct_of_previous"))]
     s = (f"Of {num(first['candidates'])} applicants, {num(last['candidates'])} joined "
-         f"({pct(100 * last['candidates'] / first['candidates'], 1) if first['candidates'] else '—'}).")
+         f"({pct(100 * last['candidates'] / first['candidates'], 1) if first['candidates'] else '–'}).")
     if drops:
         d = min(drops, key=lambda r: r["pct_of_previous"])
         s += (f" The biggest drop is at the '{d['stage']}' step: only {pct(d['pct_of_previous'], 0)} of candidates "
@@ -225,7 +225,7 @@ def hiring_recruiter_comparison(rows, ctx):
     tot = sum(r["reqs_assigned"] for r in ok)
     top = max(ok, key=lambda r: r["reqs_assigned"])
     return (f"{top['recruiter']} handles {num(top['reqs_assigned'])} of {num(tot)} openings "
-            f"({pct(100 * top['reqs_assigned'] / tot, 0)}) — compare speed and SLA per opening, not total offers.")
+            f"({pct(100 * top['reqs_assigned'] / tot, 0)}), so compare speed and SLA per opening, not total offers.")
 
 
 def hiring_interviewers(rows, ctx):
@@ -274,7 +274,7 @@ def hiring_sla_mismatch(rows, ctx):
         return "The applicant tracking system's SLA status agrees with the dates on every filled role."
     n = sum(r["reqs"] for r in m)
     return (f"The applicant tracking system marks {num(n)} filled roles as on time that actually missed their target "
-            "by the dates — the dashboard uses the dates.")
+            "by the dates. The dashboard uses the dates.")
 
 
 def hiring_backfill(rows, ctx):
@@ -371,12 +371,12 @@ DQ_GROUPS = [
      "A few values were clearly wrong (a monthly salary entered as yearly, a leaver still marked active). We corrected "
      "them and flagged each one."),
     ("findings", "Things the business should know", r"FINDING|backed out|raised before the replaced",
-     "Not errors to fix but facts worth knowing — for example, the hiring system marks some late hires as on time."),
+     "Not errors to fix but facts worth knowing. For example, the hiring system marks some late hires as on time."),
 ]
 
 
 def dq_stories(log_rows: list[dict]) -> list[dict]:
-    """Group changed-data rules into a few plain-language cards. Counts are summed from the cleaning log."""
+    """Group changed-data rules into a few readable cards. Counts are summed from the cleaning log."""
     out = []
     used: set[int] = set()
     for key, title, rx, why in DQ_GROUPS:

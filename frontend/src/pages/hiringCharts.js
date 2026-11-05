@@ -5,7 +5,7 @@ const tipRow = (label, value) => `<div style="display:flex;justify-content:space
 const tipHead = (t) => `<div style="font-weight:600;margin-bottom:4px">${t}</div>`;
 const MONTHS = { '01': 'Jan', '02': 'Feb', '03': 'Mar', '04': 'Apr', '05': 'May', '06': 'Jun', '07': 'Jul', '08': 'Aug', '09': 'Sep', '10': 'Oct', '11': 'Nov', '12': 'Dec' };
 export const monthLabel = (m) => (m ? `${MONTHS[m.slice(5, 7)]} ${m.slice(2, 4)}` : '');
-const days = (v) => (isNum(v) ? `${Number.isInteger(v) ? v : v.toFixed(1)} d` : '—');
+const days = (v) => (isNum(v) ? `${Number.isInteger(v) ? v : v.toFixed(1)} d` : '–');
 
 /** (1) Monthly: reqs raised (bars) vs offers accepted and joins (lines). */
 export function monthlyOption(rows, p) {
@@ -141,7 +141,7 @@ export function offersOption(rows, p) {
       formatter: (prm) => {
         const r = rows[prm.dataIndex];
         return tipHead(`Offered ÷ expected CTC ${r.ratio_band}`) + tipRow('Declined', `${fmtPct(r.decline_rate_pct)} (${fmtInt(r.declined)} of ${fmtInt(r.offers)})`)
-          + tipRow('Accepted', fmtInt(r.accepted)) + tipRow('Median offer ÷ budget max', isNum(r.median_offer_to_budget) ? r.median_offer_to_budget.toFixed(2) : '—');
+          + tipRow('Accepted', fmtInt(r.accepted)) + tipRow('Median offer ÷ budget max', isNum(r.median_offer_to_budget) ? r.median_offer_to_budget.toFixed(2) : '–');
       },
     },
     xAxis: { type: 'category', data: rows.map((r) => r.ratio_band), name: 'Offered CTC ÷ candidate’s expected CTC', nameLocation: 'middle', nameGap: 26 },

@@ -57,11 +57,11 @@ export default function Landing() {
               <Sparkles className="h-3.5 w-3.5 text-[#93C5FD]" /> Employee surveys and hiring, April–October 2026
             </motion.div>
             <motion.h1 variants={item} className="font-display max-w-4xl text-[40px] font-semibold leading-[1.05] sm:text-6xl lg:text-7xl">
-              See how your people feel, and how well you hire — <span className="text-[#93C5FD]">in plain words.</span>
+              See how your people feel and <span className="text-[#93C5FD]">how well you hire.</span>
             </motion.h1>
             <motion.p variants={item} className="mt-6 max-w-2xl text-base leading-7 text-white/75 sm:text-lg">
-              Two dashboards built on cleaned, audited data. Every chart says what it means in one sentence, shows the exact
-              query behind it, and can be explained by AI on request. Ask your own question in plain English.
+              Employee sentiment and hiring performance in one place, built on cleaned and audited data. Every chart states its
+              key takeaway, shows the query behind it, and can be summarised by AI on request.
             </motion.p>
             <motion.div variants={item} className="mt-8 flex flex-wrap gap-3">
               <Link to="/sentiment" className="group inline-flex items-center gap-2 rounded-xl bg-[#2563EB] px-5 py-3 text-sm font-semibold shadow-lg shadow-[#2563EB]/30 hover:bg-[#1D4ED8]">
@@ -88,10 +88,10 @@ export default function Landing() {
       {/* ── findings ─────────────────────────────────────────────────────── */}
       <section className="mx-auto max-w-6xl px-5 py-20 sm:px-8">
         <FadeIn>
-          <div className="text-xs font-semibold uppercase tracking-[0.18em] text-accent">What the data says</div>
-          <h2 className="font-display mt-2 max-w-3xl text-3xl font-semibold leading-tight sm:text-4xl">The findings, without the jargon</h2>
+          <div className="text-xs font-semibold uppercase tracking-[0.18em] text-accent">Key findings</div>
+          <h2 className="font-display mt-2 max-w-3xl text-3xl font-semibold leading-tight sm:text-4xl">What the data shows</h2>
           <p className="mt-3 max-w-2xl text-sm leading-6 text-muted">
-            Written by code from the same data as the dashboards, so they always match. Open a dashboard to see the evidence behind each one.
+            Generated from the same data as the dashboards, so they always match. Open a dashboard to see the evidence behind each one.
           </p>
         </FadeIn>
         {home.loading && !home.data ? (
@@ -122,12 +122,12 @@ export default function Landing() {
         <div className="mx-auto max-w-6xl px-5 py-20 sm:px-8">
           <FadeIn>
             <div className="text-xs font-semibold uppercase tracking-[0.18em] text-accent">How it works</div>
-            <h2 className="font-display mt-2 text-3xl font-semibold leading-tight sm:text-4xl">Numbers you can check, words you can use</h2>
+            <h2 className="font-display mt-2 text-3xl font-semibold leading-tight sm:text-4xl">Built to be trusted and easy to act on</h2>
           </FadeIn>
           <Stagger className="mt-10 grid gap-4 md:grid-cols-3">
             {[
               { icon: ShieldCheck, t: 'Cleaned and audited', d: `${isNum(h.rules) ? fmtInt(h.rules) : 'Every'} checks ran on the raw spreadsheets before any number was calculated. Every fix is logged.`, to: '/data-quality', cta: 'See what we fixed' },
-              { icon: Lightbulb, t: 'Explained in one sentence', d: 'Each chart opens with what it shows. Want more? “What does this chart say?” gives a short AI explanation from the same numbers.', to: '/sentiment', cta: 'Open a dashboard' },
+              { icon: Lightbulb, t: 'Clear takeaways', d: 'Each chart opens with its key takeaway. “What does this chart say?” adds a short AI summary based on the same numbers.', to: '/sentiment', cta: 'Open a dashboard' },
               { icon: Code2, t: 'Fully transparent', d: 'Every chart shows the exact SQL behind it, and small groups (under 5 people) are hidden to protect anonymity.', to: '/hiring', cta: 'Try it on hiring' },
             ].map((c) => (
               <motion.div key={c.t} variants={item} className="card flex flex-col p-6">
@@ -146,7 +146,7 @@ export default function Landing() {
                 <div>
                   <h3 className="text-lg font-semibold">Ask the data a question</h3>
                   <p className="mt-1 max-w-xl text-sm leading-6 text-white/70">
-                    “Which teams are least positive?” “How long does hiring take by grade?” Get a chart, a one-line explanation and the query — read-only, and survey answers stay anonymous.
+                    “Which teams are least positive?” “How long does hiring take by grade?” Get a chart, a one-line summary and the query behind it. Queries are read-only and survey answers stay anonymous.
                   </p>
                 </div>
               </div>
