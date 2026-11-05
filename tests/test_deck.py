@@ -19,7 +19,7 @@ def deck(tmp_path_factory):
     spec.loader.exec_module(mod)
     out = tmp_path_factory.mktemp("deck")
     mod.DECK, mod.TRACE = out / "deck.pptx", out / "trace.md"
-    mod.I.CHARTS = out / "charts"
+    mod.ART = out / "art"
     mod.build()
     mod.write_trace()
     return mod
@@ -43,7 +43,12 @@ def test_twelve_slides_with_notes_and_charts(deck):
     for i, body, notes in _texts(prs):
         assert len(notes) > 80, f"slide {i} needs speaker notes"
     pics = [sum(1 for s in sl.shapes if s.shape_type == 13) for sl in prs.slides]
-    assert all(p == 1 for p in pics[2:10]) and pics[0] == pics[1] == pics[10] == pics[11] == 0
+    assert all(p >= 1 for p in pics), "every slide carries a drawing or chart"
+    layouts = [sl.slide_layout.name for sl in prs.slides]
+    assert layouts[0] == "Opening" and layouts[-1] == "Closing" and set(layouts[1:-1]) == {"Content"}
+    for sl in prs.slides:
+        titles = [ph for ph in sl.placeholders if ph.placeholder_format.type == 1]
+        assert titles and titles[0].text_frame.text.strip(), "every slide has a real title"
 
 
 def test_every_number_traced(deck):
@@ -53,8 +58,8 @@ def test_every_number_traced(deck):
     dq = (ROOT / "docs" / "data_quality.md").read_text(encoding="utf-8").splitlines()
     for slide, where, tok, file, line, _ in rows:
         src = ins if file == "insights.md" else dq
-        assert tok.lstrip("+") in src[line - 1], (slide, where, tok)
-    assert {r[0] for r in rows} == set(range(1, 13))
+        assert tok.lstrip("+") in src[line - 1] or tok.lstrip("+").replace(",", "") in src[line - 1], (slide, where, tok)
+    assert {r[0] for r in rows} == set(range(2, 13))       # the title slide carries no numbers
 
 
 def test_no_names_or_ids_on_slides(deck):
@@ -63,3 +68,8 @@ def test_no_names_or_ids_on_slides(deck):
         text = body + notes
         assert not any(n in text for n in names), f"slide {i} shows a name"
         assert not re.search(r"EMP\d{5}", text), f"slide {i} shows an employee ID"
+
+
+def test_plain_punctuation(deck):
+    for i, body, notes in _texts(Presentation(str(deck.DECK))):
+        assert "—" not in body + notes, f"slide {i} has an em dash"
